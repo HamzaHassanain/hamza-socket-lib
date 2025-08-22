@@ -1,0 +1,151 @@
+# CMake generated files
+CMakeCache.txt
+CMakeFiles/
+CMakeScripts/
+Testing/
+Makefile
+cmake_install.cmake
+install_manifest.txt
+compile_commands.json
+CTestTestfile.cmake
+_deps
+
+# Build directories
+build/
+Build/
+BUILD/
+out/
+dist/
+Debug/
+Release/
+RelWithDebInfo/
+MinSizeRel/
+
+# IDE files
+# .vscode/
+.vs/
+*.vcxproj
+*.vcxproj.filters
+*.vcxproj.user
+*.sln
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# CLion
+.idea/
+cmake-build-*/
+
+# Qt Creator
+*.pro.user
+*.pro.user.*
+*.qbs.user
+*.qbs.user.*
+*.moc
+*.moc.cpp
+*.qm
+*.prl
+*.rcc
+
+# Visual Studio Code
+# .vscode/
+*.code-workspace
+
+# Xcode
+*.xcodeproj/
+*.xcworkspace/
+
+# Compiled Object files
+*.slo
+*.lo
+*.o
+*.obj
+*.ko
+*.elf
+
+# Precompiled Headers
+*.gch
+*.pch
+
+# Compiled Dynamic libraries
+*.so
+*.dylib
+*.dll
+
+# Fortran module files
+*.mod
+*.smod
+
+# Compiled Static libraries
+*.lai
+*.la
+*.a
+*.lib
+
+# Executables
+*.exe
+*.out
+*.app
+*.i*86
+*.x86_64
+*.hex
+
+# Debug files
+*.dSYM/
+*.su
+*.idb
+*.pdb
+
+# Kernel Module Compile Results
+*.mod*
+*.cmd
+.tmp_versions/
+modules.order
+Module.symvers
+Mkfile.old
+dkms.conf
+
+# Package managers
+conan.lock
+conanbuildinfo.cmake
+conaninfo.txt
+conanfile.txt.timestamp
+
+# vcpkg
+vcpkg_installed/
+
+# CPack
+_CPack_Packages/
+*.tar.gz
+*.zip
+*.dmg
+
+# Testing
+CTestTestfile.cmake
+DartConfiguration.tcl
+
+# Documentation
+docs/html/
+docs/latex/
+Doxyfile.bak
+
+# Temporary files
+*~
+*.swp
+*.swo
+*.tmp
+.DS_Store
+Thumbs.db
+
+# Log files
+*.log
+
+# Project specific (customize as needed)
+# Add your specific executable names here
+test_client
+test_server
+
+.vscode/
+.env
+app.js
