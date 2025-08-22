@@ -1,9 +1,11 @@
 #include <utilities.hpp>
 #include <string>
-#include <ip_address.hpp>
 #include <memory>
+#include <ip_address.hpp>
 #include <family.hpp>
 #include <port.hpp>
+#include <socket_address.hpp>
+#include <socket.hpp>
 #include <random>
 #include <mutex>
 #include <cstring>
@@ -91,7 +93,7 @@ namespace hamza_socket
         // A port might be free for TCP but in use for UDP, or vice versa
 
         // Test TCP port availability
-        socket_t tcp_socket = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+        socket_t tcp_socket = ::socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
         if (!is_valid_socket(tcp_socket))
         {
             return false; // If we can't create socket, assume port is not available
@@ -126,7 +128,7 @@ namespace hamza_socket
         }
 
         // Test UDP port availability
-        socket_t udp_socket = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
+        socket_t udp_socket = ::socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
         if (!is_valid_socket(udp_socket))
         {
             return false; // If we can't create UDP socket, assume port is not available
@@ -430,5 +432,33 @@ namespace hamza_socket
                        [](unsigned char c)
                        { return std::toupper(c); });
         return upper_case_str;
+    }
+
+    std::shared_ptr<hamza_socket::socket> make_listener_socket(uint16_t port, const std::string &ip, int backlog)
+    {
+        try
+        {
+            auto sock_ptr = std::make_shared<hamza_socket::socket>(hamza_socket::Protocol::TCP);
+
+            sock_ptr->set_reuse_address(true);
+            sock_ptr->set_non_blocking(true);
+            sock_ptr->set_close_on_exec(true);
+            sock_ptr->bind(hamza_socket::socket_address(hamza_socket::port(port), hamza_socket::ip_address(ip)));
+            sock_ptr->listen(backlog);
+
+            // Optional: Enable per-CPU accept queues for multi-process models (one process per core).
+            // If you run multiple worker *processes*, uncomment this:
+            // sock_ptr->set_option(SOL_SOCKET, SO_REUSEPORT, 1);
+
+            // Optional: reduce wakeups by notifying only when data arrives (Linux-specific).
+            // int defer_secs = 1;
+            // sock_ptr->set_option(IPPROTO_TCP, TCP_DEFER_ACCEPT, defer_secs);
+
+            return sock_ptr;
+        }
+        catch (const socket_exception &e)
+        {
+            return nullptr;
+        }
     }
 }

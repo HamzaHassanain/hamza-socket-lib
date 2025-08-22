@@ -4,7 +4,7 @@
 #include <chrono>
 #include <cstring> // For strerror
 #include <sys/socket.h>
-
+#include <memory>
 // Platform detection and common socket types
 #if defined(_WIN32) || defined(_WIN64) || defined(__CYGWIN__)
 #define hamza_socket_PLATFORM_WINDOWS
@@ -34,6 +34,8 @@ namespace hamza_socket
     class ip_address;
     class port;
     class family;
+    class socket;
+    class socket_address;
 }
 
 namespace hamza_socket
@@ -207,5 +209,7 @@ namespace hamza_socket
 
     std::string get_error_message();
     std::string to_upper_case(const std::string &input);
+
+    std::shared_ptr<hamza_socket::socket> make_listener_socket(uint16_t port, const std::string &ip = "0.0.0.0", int backlog = SOMAXCONN);
 
 }

@@ -121,6 +121,7 @@ namespace hamza_socket
         void epoll_loop(int timeout = 1000)
         {
             on_listen_success();
+            
             while (!g_stop)
             {
 
@@ -357,34 +358,6 @@ namespace hamza_socket
             epoll_loop(timeout);
         }
 
-        virtual std::shared_ptr<socket> make_listener_socket(uint16_t port, const char *ip = "0.0.0.0", int backlog = SOMAXCONN)
-        {
-            try
-            {
-                auto sock_ptr = std::make_shared<socket>(Protocol::TCP);
-
-                sock_ptr->set_reuse_address(true);
-                sock_ptr->set_non_blocking(true);
-                sock_ptr->set_close_on_exec(true);
-                sock_ptr->bind(socket_address(hamza_socket::port(port), hamza_socket::ip_address(ip)));
-                sock_ptr->listen(backlog);
-
-                // Optional: Enable per-CPU accept queues for multi-process models (one process per core).
-                // If you run multiple worker *processes*, uncomment this:
-                // sock_ptr->set_option(SOL_SOCKET, SO_REUSEPORT, 1);
-
-                // Optional: reduce wakeups by notifying only when data arrives (Linux-specific).
-                // int defer_secs = 1;
-                // sock_ptr->set_option(IPPROTO_TCP, TCP_DEFER_ACCEPT, defer_secs);
-
-                return sock_ptr;
-            }
-            catch (const socket_exception &e)
-            {
-                std::cerr << "Socket error: " << e.what() << std::endl;
-                return nullptr;
-            }
-        }
         virtual bool register_listener_socket(std::shared_ptr<socket> sock_ptr)
         {
             listener_socket = sock_ptr;
