@@ -92,14 +92,6 @@ namespace hamza_socket
     }
 
     /**
-     * @brief Removes a file descriptor from epoll monitoring
-     *
-     * Unregisters a file descriptor from the epoll instance. Called during
-     * connection cleanup to stop monitoring events for closed connections.
-     *
-     * @param fd File descriptor to remove
-     * @return 0 on success, -1 on failure
-     *
      * Implementation Notes:
      * - Uses EPOLL_CTL_DEL operation
      * - Third parameter can be NULL for delete operations
@@ -111,14 +103,6 @@ namespace hamza_socket
     }
 
     /**
-     * @brief Closes and performs complete cleanup of a connection
-     *
-     * This function handles the complete lifecycle cleanup of a connection:
-     * 1. Removes the connection from epoll monitoring
-     * 2. Notifies derived classes via callback
-     * 3. Closes the underlying socket
-     * 4. Removes connection from internal tracking
-     *
      * @param fd File descriptor of the connection to close
      *
      * Implementation Notes:
@@ -128,22 +112,14 @@ namespace hamza_socket
      */
     void epoll_server::close_conn(int fd)
     {
+        current_open_connections--;
         del_epoll(fd);
         on_connection_closed(conns[fd].conn);
-        close_socket(fd);
+        close(fd);
         conns.erase(fd);
     }
 
     /**
-     * @brief Attempts to flush pending writes for a connection
-     *
-     * Tries to send all queued outbound data for a connection. Handles partial
-     * sends gracefully by updating the output queue. This function is called
-     * whenever a socket becomes writable or when new data is queued for sending.
-     *
-     * @param c Reference to the epoll_connection containing output queue
-     * @return true if all queued data was sent, false if data remains or error occurred
-     *
      * Algorithm:
      * 1. Process each queued message in order
      * 2. Skip empty messages (cleanup)
@@ -194,14 +170,6 @@ namespace hamza_socket
     }
 
     /**
-     * @brief Main event loop using epoll for high-performance I/O multiplexing
-     *
-     * This is the core of the server - an event-driven loop that efficiently
-     * handles thousands of concurrent connections using Linux's epoll mechanism.
-     * The loop continues until a stop signal is received.
-     *
-     * @param timeout Timeout in milliseconds for epoll_wait calls
-     *
      * Event Loop Algorithm:
      * 1. Wait for events using epoll_wait()
      * 2. Handle timeout and error conditions
@@ -261,7 +229,7 @@ namespace hamza_socket
                     if (listener_socket && fd == listener_socket->get_fd())
                     {
                         // Accept as many connections as possible (edge-triggered)
-                        while (true)
+                        while (true && current_open_connections < max_fds)
                         {
                             try
                             {
@@ -296,6 +264,7 @@ namespace hamza_socket
                                 auto connptr = std::make_shared<connection>(file_descriptor(cfd),
                                                                             listener_socket->get_bound_address(),
                                                                             socket_address(client_addr));
+                                current_open_connections++;
                                 conns.emplace(cfd, epoll_connection{connptr, {}, false});
                                 on_connection_opened(connptr);
                             }
@@ -425,15 +394,6 @@ namespace hamza_socket
     // ============================================================================
 
     /**
-     * @brief Requests closure of a specific connection
-     *
-     * This method provides a safe way for derived classes to request connection
-     * closure. Instead of immediately closing the connection, it signals the
-     * main event loop using a custom epoll event. This ensures the closure
-     * happens in the proper context and maintains thread safety.
-     *
-     * @param conn Shared pointer to the connection to close
-     *
      * Implementation Details:
      * - Uses custom epoll event (HAMZA_CUSTOM_CLOSE_EVENT) for signaling
      * - Defers actual closure to the main event loop
@@ -455,10 +415,6 @@ namespace hamza_socket
      * Adds a message to the connection's output queue and ensures the connection
      * is monitored for write availability. Messages are sent asynchronously
      * when the socket becomes writable, providing efficient flow control.
-     *
-     * @param conn Shared pointer to the target connection
-     * @param db Data buffer containing the message to send
-     *
      * Algorithm:
      * 1. Find connection in internal map
      * 2. Add message to connection's output queue
@@ -491,14 +447,6 @@ namespace hamza_socket
     // ============================================================================
 
     /**
-     * @brief Default exception handler for server errors
-     *
-     * Called whenever an exception occurs during server operation. The default
-     * implementation logs the error to stderr. Derived classes can override
-     * this to implement custom error handling, logging, or recovery strategies.
-     *
-     * @param e The exception that occurred
-     *
      * Override Examples:
      * - Log to file or syslog
      * - Send error notifications
@@ -510,36 +458,12 @@ namespace hamza_socket
         std::cerr << "Exception: " << e.what() << std::endl;
     }
 
-    /**
-     * @brief Called when a new client connection is established
-     *
-     * Default implementation logs basic connection information. Derived classes
-     * typically override this to implement:
-     * - Authentication and authorization
-     * - Connection rate limiting
-     * - Client information logging
-     * - Connection initialization
-     *
-     * @param conn Shared pointer to the newly established connection
-     */
     void epoll_server::on_connection_opened(std::shared_ptr<connection> conn)
     {
         std::cout << "Client Connected:\n";
         std::cout << "\t Client " << conn->get_fd() << " connected." << std::endl;
     }
 
-    /**
-     * @brief Called when a client connection is closed
-     *
-     * Default implementation logs disconnection information. Derived classes
-     * can override this to implement:
-     * - Session cleanup
-     * - Connection statistics logging
-     * - Resource deallocation
-     * - User logout handling
-     *
-     * @param conn Shared pointer to the closed connection
-     */
     void epoll_server::on_connection_closed(std::shared_ptr<connection> conn)
     {
         std::cout << "Client Disconnected:\n";
@@ -547,20 +471,6 @@ namespace hamza_socket
     }
 
     /**
-     * @brief Called when data is received from a client connection
-     *
-     * This is the primary message processing callback that derived classes should
-     * override to implement application-specific logic. The default implementation
-     * provides a simple echo server using detached threads.
-     *
-     * @param conn Shared pointer to the connection that sent the data
-     * @param db Data buffer containing the received message
-     *
-     * Default Behavior:
-     * - Spawns a detached thread for each message
-     * - Echoes received data back to sender
-     * - Handles special "close" command to terminate connection
-     *
      * Production Considerations:
      * - Default thread-per-message approach doesn't scale well
      * - Consider using thread pools for production servers
@@ -588,12 +498,6 @@ namespace hamza_socket
     }
 
     /**
-     * @brief Called when the server successfully starts listening
-     *
-     * Default implementation logs the listening socket information. Derived
-     * classes can override this to implement startup notifications, service
-     * registration, or initialization completion signaling.
-     *
      * Common Override Uses:
      * - Service discovery registration
      * - Startup notifications to monitoring systems
@@ -606,12 +510,6 @@ namespace hamza_socket
     }
 
     /**
-     * @brief Called when the server shuts down gracefully
-     *
-     * Default implementation logs shutdown completion. Derived classes can
-     * override this to implement cleanup procedures, shutdown notifications,
-     * or resource finalization.
-     *
      * Common Override Uses:
      * - Final cleanup of application resources
      * - Shutdown notifications to monitoring systems
@@ -628,31 +526,20 @@ namespace hamza_socket
     // ============================================================================
 
     /**
-     * @brief Constructs and initializes the epoll server
-     *
-     * Performs complete server initialization including resource limit
-     * configuration, epoll instance creation, and event buffer allocation.
-     * This constructor prepares the server for high-concurrency operation.
-     *
-     * @param max_fds Maximum number of file descriptors the server should handle
-     *
      * Initialization Steps:
      * 1. Configure process file descriptor limits
      * 2. Allocate initial event buffer (4096 events)
      * 3. Create epoll instance with EPOLL_CLOEXEC flag
      * 4. Validate epoll creation success
-     *
-     * @throws std::runtime_error if epoll instance creation fails
-     *
-     * Resource Management:
-     * - Sets both soft and hard rlimits to max_fds
-     * - EPOLL_CLOEXEC ensures epoll FD is closed on exec
-     * - Initial event buffer size of 4096 handles most workloads
-     * - Buffer auto-resizes during operation if needed
      */
     epoll_server::epoll_server(int max_fds)
     {
-        set_rlimit_nofile(max_fds, max_fds);
+        if (set_rlimit_nofile(max_fds, max_fds) != 0)
+        {
+            std::cerr << "Failed to set file descriptor limits: " << strerror(errno) << std::endl;
+        }
+        else
+            this->max_fds = max_fds;
         events = std::vector<epoll_event>(4096);
         epoll_fd = epoll_create1(EPOLL_CLOEXEC);
         if (epoll_fd == -1)
@@ -662,39 +549,12 @@ namespace hamza_socket
         }
     }
 
-    /**
-     * @brief Starts the main server event loop
-     *
-     * Initiates the main event processing loop that handles all server operations.
-     * This method blocks until the server is stopped via stop_server() or a
-     * signal is received. It delegates to epoll_loop() for the actual implementation.
-     *
-     * @param timeout Timeout in milliseconds for epoll_wait calls (default: 1000ms)
-     *
-     * Behavior:
-     * - Calls epoll_loop() to start event processing
-     * - Blocks until server shutdown is requested
-     * - Handles all connection events, I/O operations, and errors
-     * - Provides graceful shutdown when stop flag is set
-     *
-     * @note This method overrides tcp_server::listen()
-     * @note The method blocks the calling thread until shutdown
-     */
     void epoll_server::listen(int timeout)
     {
         epoll_loop(timeout);
     }
 
     /**
-     * @brief Registers a pre-configured listening socket with the server
-     *
-     * Associates a listening socket with the epoll server and begins monitoring
-     * it for incoming connections. The socket must be properly configured
-     * (bound and listening) before calling this method.
-     *
-     * @param sock_ptr Shared pointer to the configured listening socket
-     * @return true if registration successful, false on failure
-     *
      * Prerequisites:
      * - Socket must be bound to an address
      * - Socket must be in listening state
@@ -721,26 +581,11 @@ namespace hamza_socket
     }
 
     /**
-     * @brief Initiates graceful server shutdown
-     *
+
      * Sets the stop flag that will cause the main event loop to exit cleanly.
      * The server will finish processing current events before shutting down,
      * ensuring graceful closure of all connections.
-     *
-     * Shutdown Process:
-     * 1. Set atomic stop flag
-     * 2. Event loop detects flag on next iteration
-     * 3. Loop exits after current event batch
-     * 4. Destructor handles final cleanup
-     *
-     * Benefits:
-     * - Non-disruptive shutdown process
-     * - Allows current operations to complete
-     * - Prevents data loss during shutdown
-     * - Maintains connection integrity until closure
-     *
-     * @note Overrides tcp_server::stop_server()
-     * @note Shutdown occurs after current epoll_wait timeout
+
      */
     void epoll_server::stop_server()
     {
@@ -748,22 +593,11 @@ namespace hamza_socket
     }
 
     /**
-     * @brief Destructor - performs complete server cleanup
-     *
-     * Ensures all resources are properly released when the server is destroyed.
-     * This includes closing all active connections, the listener socket, and
-     * the epoll file descriptor. Uses RAII principles for automatic cleanup.
-     *
+
      * Cleanup Order:
      * 1. Close all active client connections
      * 2. Close listener socket if present
      * 3. Close epoll file descriptor
-     *
-     * Safety Features:
-     * - Uses structured bindings for safe iteration
-     * - Checks for null pointers before closing
-     * - Validates file descriptor values
-     * - No exceptions thrown from destructor
      */
     epoll_server::~epoll_server()
     {

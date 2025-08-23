@@ -112,6 +112,11 @@ namespace hamza_socket
         /// Atomic flag for graceful shutdown signaling
         volatile sig_atomic_t g_stop = 0;
 
+        /// Current number of open connections
+        ssize_t current_open_connections = 10;
+
+        /// Maximum number of file descriptors
+        ssize_t max_fds = 1024;
         /**
          * @brief Sets file descriptor limit for the process
          * @param soft Soft limit for file descriptors
