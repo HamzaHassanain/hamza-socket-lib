@@ -15,7 +15,7 @@
 #endif
 
 namespace hamza_socket
-{
+{ 
     /**
      * @brief Cross-platform thread-safe wrapper for select() system call I/O multiplexing.
      *
