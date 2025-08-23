@@ -364,6 +364,8 @@ find_library(HAMZA_SOCKET_LIB
     PATHS /path/to/hamza-socket-lib/build
 )
 
+target_include_directories(my_app PRIVATE /path/to/hamza-socket-lib/includes)
+
 # Link against the library
 add_executable(my_app main.cpp)
 target_link_libraries(my_app ${HAMZA_SOCKET_LIB})
@@ -372,7 +374,9 @@ target_include_directories(my_app PRIVATE /path/to/hamza-socket-lib/includes)
 
 ## API Documentation
 
-Below is a reference of the core public classes and their commonly used methods. Include the corresponding header before use, for example:
+Below is a reference of the core public classes and their commonly used methods. Include the corresponding header before use.
+
+For detailed method signatures and advanced usage patterns, consult the comprehensive inline documentation in the header files located in `includes/` directory.
 
 ### hamza_socket::file_descriptor
 
@@ -439,13 +443,13 @@ Below is a reference of the core public classes and their commonly used methods.
 ### hamza_socket::socket_address
 
 ```cpp
-#include "socket_address.h"
+#include "socket_address.hpp"
 
 // - Purpose: Combines `ip_address`, `port`, and `family` and exposes a system `sockaddr` for syscalls.
 // - Key constructors:
   explicit socket_address()
   explicit socket_address(const port &port_id, const ip_address &address = ip_address("0.0.0.0"), const family &family_id = family(IPV4))
-  explicit socket_address(sockaddr_storage &addr)`
+  explicit socket_address(sockaddr_storage &addr)
   // - copy / move constructors and assignments supported
 // - Important methods:
   ip_address get_ip_address() const
@@ -456,4 +460,504 @@ Below is a reference of the core public classes and their commonly used methods.
   socklen_t get_sock_addr_len() const
 ```
 
-### Something next
+### hamza_socket::data_buffer
+
+```cpp
+#include "data_buffer.hpp"
+
+// - Purpose: Dynamic buffer for storing and managing binary data with automatic resizing.
+// - Key constructors:
+  explicit data_buffer() // — empty buffer
+  explicit data_buffer(const std::string &str) // — from string
+  explicit data_buffer(const char *data, std::size_t size) // — from raw data
+  // - copy and move constructors/assignments supported
+// - Data manipulation:
+  void append(const char *data, std::size_t size) // — append raw data
+  void append(const std::string &str) // — append string
+  void clear() // — remove all data
+// - Data access:
+  const char *data() const // — pointer to raw data
+  std::size_t size() const // — size in bytes
+  bool empty() const // — check if empty
+  std::string to_string() const // — convert to string
+```
+
+### hamza_socket::socket_exception
+
+```cpp
+#include "exceptions.hpp"
+
+// - Purpose: Base exception class for all socket-related errors with detailed error information.
+// - Constructor:
+  explicit socket_exception(const std::string &message, const std::string &type, const std::string &thrower_function = "SOCKET_FUNCTION")
+// - Error information:
+  virtual const char *type() const noexcept // — exception type (e.g., "SocketCreation", "SocketBinding")
+  virtual const char *thrower_function() const noexcept // — function that threw the exception
+  virtual const char *what() const noexcept override // — formatted error message
+```
+
+### hamza_socket::socket
+
+```cpp
+#include "socket.hpp"
+
+// - Purpose: Cross-platform socket wrapper for TCP and UDP network operations with resource management.
+// - Key constructors:
+  explicit socket(const Protocol &protocol) // — create unbound socket
+  explicit socket(const socket_address &addr, const Protocol &protocol) // — create and bind
+  // - Move-only: copy operations deleted, move operations available
+// - Socket setup methods:
+  void bind(const socket_address &addr)
+  void set_reuse_address(bool reuse)
+  void set_non_blocking(bool enable)
+  void set_close_on_exec(bool enable)
+  void set_option(int level, int optname, int optval) // — custom socket options
+// - TCP connection methods:
+  void connect(const socket_address &addr) // — client connect
+  void listen(int backlog = SOMAXCONN) // — server listen
+  std::shared_ptr<connection> accept(bool NON_BLOCKING = false) // — accept connection
+// - UDP communication methods:
+  data_buffer receive(socket_address &client_addr) // — receive from any client
+  void send_to(const socket_address &addr, const data_buffer &data) // — send to specific address
+// - General methods:
+  socket_address get_bound_address() const
+  int get_fd() const // — raw file descriptor
+  void disconnect() // — close socket
+  bool is_connected() const
+  bool operator<(const socket &other) const // — for container ordering
+```
+
+### hamza_socket::connection
+
+```cpp
+#include "connection.hpp"
+
+// - Purpose: Represents an established TCP connection with send/receive capabilities.
+// - Key constructor:
+  connection(file_descriptor fd, const socket_address &local_addr, const socket_address &remote_addr)
+  // - Move-only: copy operations deleted, move operations available
+// - Communication methods:
+  ssize_t send(const data_buffer &data) // — send data, returns bytes sent
+  data_buffer receive() // — receive data from connection
+// - Connection management:
+  void close() // — close the connection
+  bool is_connection_open() const
+// - Address information:
+  int get_fd() const // — raw file descriptor
+  socket_address get_remote_address() const
+  socket_address get_local_address() const
+```
+
+### hamza_socket::tcp_server
+
+```cpp
+#include "tcp_server.hpp"
+
+// - Purpose: Abstract base class for TCP server implementations with event-driven callbacks.
+// - Key characteristics:
+  // - Pure virtual class (cannot be instantiated directly)
+  // - Provides interface for connection and message handling
+  // - Implemented by select_server and epoll_server
+// - Pure virtual methods to implement:
+  virtual void close_connection(std::shared_ptr<connection> conn) = 0 // — request connection closure
+  virtual void send_message(std::shared_ptr<connection> conn, const data_buffer &db) = 0 // — send data to connection
+  virtual void on_exception_occurred(const std::exception &e) = 0 // — handle server exceptions
+  virtual void on_connection_opened(std::shared_ptr<connection> conn) = 0 // — new connection callback
+  virtual void on_connection_closed(std::shared_ptr<connection> conn) = 0 // — connection closed callback
+  virtual void on_message_received(std::shared_ptr<connection> conn, const data_buffer &db) = 0 // — data received callback
+  virtual void on_listen_success() = 0 // — server started successfully
+  virtual void on_shutdown_success() = 0 // — server shutdown completed
+  virtual void on_waiting_for_activity() = 0 // — server waiting for events
+// - Server control methods:
+  virtual void listen(int timeout = 1000) = 0 // — start server event loop
+  virtual void stop_server() = 0 // — request graceful shutdown
+```
+
+### hamza_socket::epoll_server
+
+```cpp
+#include "epoll_server.hpp"
+
+// - Purpose: High-performance Linux epoll-based TCP server for thousands of concurrent connections.
+// - Platform support: Linux only (requires epoll system call)
+// - Key constructor:
+  epoll_server(int max_fds) // — specify maximum file descriptors
+// - Server management:
+  virtual void listen(int timeout) override // — start epoll event loop
+  virtual bool register_listener_socket(std::shared_ptr<socket> sock_ptr) // — register listening socket
+  virtual void stop_server() override // — graceful shutdown
+// - Connection interface (inherit from tcp_server):
+  void close_connection(std::shared_ptr<connection> conn) override // — close specific connection
+  void send_message(std::shared_ptr<connection> conn, const data_buffer &db) override // — send data asynchronously
+// - Event callbacks to override:
+  virtual void on_connection_opened(std::shared_ptr<connection> conn) override
+  virtual void on_connection_closed(std::shared_ptr<connection> conn) override
+  virtual void on_message_received(std::shared_ptr<connection> conn, const data_buffer &db) override
+  virtual void on_exception_occurred(const std::exception &e) override
+  virtual void on_listen_success() override
+  virtual void on_shutdown_success() override
+  virtual void on_waiting_for_activity() override
+// - Performance features:
+  // - Edge-triggered epoll for O(1) event notification
+  // - Non-blocking I/O throughout
+  // - Automatic write buffering and flow control
+  // - Scales to thousands of concurrent connections
+```
+
+### hamza_socket::utilities
+
+```cpp
+#include "utilities.hpp"
+
+// - Purpose: Cross-platform socket utilities and helper functions for network programming.
+// - Key constants:
+  const int IPV4 = AF_INET // — IPv4 address family identifier
+  const int IPV6 = AF_INET6 // — IPv6 address family identifier
+  const int MIN_PORT = 1024 // — Minimum valid port number (reserved)
+  const int MAX_PORT = 65535 // — Maximum valid port number
+  const std::size_t DEFAULT_BUFFER_SIZE = 4096 // — Default buffer size for socket I/O
+  const std::size_t MAX_BUFFER_SIZE = 65536 // — Maximum buffer size for single operations
+  const int DEFAULT_TIMEOUT = 5000 // — Default socket timeout (milliseconds)
+  const int CONNECT_TIMEOUT = 10000 // — Connection establishment timeout
+  const int RECV_TIMEOUT = 10000 // — Receive operation timeout
+  const int DEFAULT_LISTEN_BACKLOG = SOMAXCONN // — Default listen queue size
+
+// - Protocol enumeration:
+  enum class Protocol {
+    TCP = SOCK_STREAM, // — Transmission Control Protocol (reliable, connection-oriented)
+    UDP = SOCK_DGRAM   // — User Datagram Protocol (unreliable, connectionless)
+  }
+
+// - Network address conversion utilities:
+  void convert_ip_address_to_network_order(const family &family_ip, const ip_address &address, void *addr)
+  // — Convert IP address string to network byte order using inet_pton()/InetPtonA()
+  std::string get_ip_address_from_network_address(sockaddr_storage &addr)
+  // — Extract IP address string from network address structure using inet_ntop()
+
+// - Port management utilities:
+  port get_random_free_port()
+  // — Generate random available port number in range 1024-65535 (thread-safe)
+  bool is_valid_port(port p)
+  // — Validate port number range (1-65535), does not check availability
+  bool is_free_port(port p)
+  // — Check if port is currently available for binding (platform-specific)
+
+// - Byte order conversion utilities:
+  int convert_host_to_network_order(int port)
+  // — Convert port from host to network byte order using htons()
+  int convert_network_order_to_host(int port)
+  // — Convert port from network to host byte order using ntohs()
+
+// - Cross-platform socket management:
+  bool initialize_socket_library()
+  // — Initialize socket library (Windows: WSAStartup, Unix/Linux: no-op)
+  void cleanup_socket_library()
+  // — Cleanup socket library (Windows: WSACleanup, Unix/Linux: no-op)
+  void close_socket(socket_t socket)
+  // — Close socket using platform-appropriate function (closesocket/close)
+
+// - Socket validation functions:
+  bool is_valid_socket(socket_t socket)
+  // — Check if socket handle is valid (Windows: != INVALID_SOCKET, Unix: >= 0)
+  bool is_socket_open(int fd)
+  // — Check if file descriptor represents an open socket using getsockopt()
+  bool is_socket_connected(socket_t socket)
+  // — Check if socket is currently connected using SO_ERROR and getpeername()
+
+// - Utility functions:
+  std::string get_error_message()
+  // — Get platform-specific error message for last socket operation
+  std::string to_upper_case(const std::string &input)
+  // — Convert string to uppercase (returns new string, original unchanged)
+
+// - High-level socket creation:
+  std::shared_ptr<hamza_socket::socket> make_listener_socket(uint16_t port, const std::string &ip = "0.0.0.0", int backlog = SOMAXCONN)
+  // — Create a ready-to-use TCP listener socket bound to specified address and port
+```
+
+### Usage Examples
+
+**1. Basic TCP Echo Server with epoll (Linux):**
+
+```cpp
+#include "epoll_server.hpp"
+#include "socket.hpp"
+#include "socket_address.hpp"
+#include "data_buffer.hpp"
+#include "utilities.hpp"
+
+#include <iostream>
+
+class EchoServer : public hamza_socket::epoll_server {
+public:
+    EchoServer() : hamza_socket::epoll_server(1000) {} // Max 1000 connections
+
+protected:
+    void on_connection_opened(std::shared_ptr<hamza_socket::connection> conn) override {
+        std::cout << "Client connected from: " << conn->get_remote_address().to_string() << std::endl;
+    }
+
+    void on_message_received(std::shared_ptr<hamza_socket::connection> conn,
+                           const hamza_socket::data_buffer &message) override {
+        std::cout << "Received: " << message.to_string() << std::endl;
+        // Echo the message back
+        send_message(conn, message);
+        close_connection(conn);
+    }
+
+    void on_connection_closed(std::shared_ptr<hamza_socket::connection> conn) override {
+        std::cout << "Client disconnected: " << conn->get_remote_address().to_string() << std::endl;
+    }
+
+    void on_exception_occurred(const std::exception &e) override {
+        std::cerr << "Server error: " << e.what() << std::endl;
+    }
+
+    void on_listen_success() override {
+        std::cout << "Echo server started successfully!" << std::endl;
+    }
+
+    void on_shutdown_success() override {
+        std::cout << "Server shutdown complete." << std::endl;
+    }
+
+    void on_waiting_for_activity() override {
+        // Optional: periodic maintenance tasks
+    }
+};
+
+int main() {
+    try {
+        // Create server address (bind to all interfaces on port 8080)
+        hamza_socket::socket_address server_addr(
+            hamza_socket::port(8080),
+            hamza_socket::ip_address("0.0.0.0")
+        );
+
+        // Create TCP listening socket
+        auto listener = hamza_socket::make_listener_socket(8080);
+
+        // Create and run the echo server
+        EchoServer server;
+        if (server.register_listener_socket(listener)) {
+            server.listen(); // Start the server event loop
+        }
+    } catch (const std::exception &e) {
+        std::cerr << "Error: " << e.what() << std::endl;
+        return 1;
+    }
+    return 0;
+}
+```
+
+**2. Simple TCP Client:**
+
+```cpp
+#include "socket.hpp"
+#include "socket_address.hpp"
+#include "data_buffer.hpp"
+#include <iostream>
+#include <string>
+
+int main() {
+    try {
+        // Create client socket
+        hamza_socket::socket client(hamza_socket::Protocol::TCP);
+
+        // Connect to server
+        hamza_socket::socket_address server_addr(
+            hamza_socket::port(8080),
+            hamza_socket::ip_address("127.0.0.1")
+        );
+        client.connect(server_addr);
+
+        // Accept a connection to get connection object
+        auto conn = client.accept(); // This creates a connection wrapper
+
+        // Send a message
+        hamza_socket::data_buffer message("Hello, Server!");
+        conn->send(message);
+
+        // Receive response
+        auto response = conn->receive();
+        std::cout << "Server response: " << response.to_string() << std::endl;
+
+        conn->close();
+    } catch (const std::exception &e) {
+        std::cerr << "Client error: " << e.what() << std::endl;
+        return 1;
+    }
+    return 0;
+}
+```
+
+**3. UDP Client/Server Example:**
+
+```cpp
+#include "socket.hpp"
+#include "socket_address.hpp"
+#include "data_buffer.hpp"
+#include <iostream>
+
+// UDP Server
+void udp_server_example() {
+    try {
+        // Create server address and bind UDP socket
+        hamza_socket::socket_address server_addr(hamza_socket::port(8080));
+        hamza_socket::socket udp_server(server_addr, hamza_socket::Protocol::UDP);
+
+        std::cout << "UDP Server listening on port 8080..." << std::endl;
+
+        while (true) {
+            // Receive from any client
+            hamza_socket::socket_address client_addr;
+            auto data = udp_server.receive(client_addr);
+
+            std::cout << "Received from " << client_addr.to_string()
+                      << ": " << data.to_string() << std::endl;
+
+            // Echo back to sender
+            hamza_socket::data_buffer response("Echo: " + data.to_string());
+            udp_server.send_to(client_addr, response);
+        }
+    } catch (const std::exception &e) {
+        std::cerr << "UDP Server error: " << e.what() << std::endl;
+    }
+}
+
+// UDP Client
+void udp_client_example() {
+    try {
+        // Create UDP client socket
+        hamza_socket::socket udp_client(hamza_socket::Protocol::UDP);
+
+        // Define server address
+        hamza_socket::socket_address server_addr(
+            hamza_socket::port(8080),
+            hamza_socket::ip_address("127.0.0.1")
+        );
+
+        // Send message
+        hamza_socket::data_buffer message("Hello UDP Server!");
+        udp_client.send_to(server_addr, message);
+
+        // Receive response
+        hamza_socket::socket_address response_addr;
+        auto response = udp_client.receive(response_addr);
+        std::cout << "Server response: " << response.to_string() << std::endl;
+
+    } catch (const std::exception &e) {
+        std::cerr << "UDP Client error: " << e.what() << std::endl;
+    }
+}
+```
+
+**4. Basic TCP Server using Raw Socket (Cross-platform):**
+
+```cpp
+#include "socket.hpp"
+#include "socket_address.hpp"
+#include "connection.hpp"
+#include <iostream>
+#include <thread>
+
+void handle_client(std::shared_ptr<hamza_socket::connection> conn) {
+    try {
+        std::cout << "Handling client: " << conn->get_remote_address().to_string() << std::endl;
+
+        while (conn->is_connection_open()) {
+            // Receive data from client
+            auto data = conn->receive();
+            if (data.empty()) break; // Client disconnected
+
+            std::cout << "Received: " << data.to_string() << std::endl;
+
+            // Echo back with prefix
+            hamza_socket::data_buffer response("Echo: " + data.to_string());
+            conn->send(response);
+        }
+
+        conn->close();
+        std::cout << "Client disconnected." << std::endl;
+    } catch (const std::exception &e) {
+        std::cerr << "Client handling error: " << e.what() << std::endl;
+    }
+}
+
+int main() {
+    try {
+        // Create and bind server socket
+        hamza_socket::socket_address server_addr(
+            hamza_socket::port(8080),
+            hamza_socket::ip_address("0.0.0.0")
+        );
+        hamza_socket::socket server(server_addr, hamza_socket::Protocol::TCP);
+        server.set_reuse_address(true);
+        server.listen();
+
+        std::cout << "TCP Server listening on " << server_addr.to_string() << std::endl;
+
+        while (true) {
+            // Accept incoming connections
+            auto client_conn = server.accept();
+
+            // Handle each client in a separate thread
+            std::thread client_thread(handle_client, client_conn);
+            client_thread.detach(); // Let thread run independently
+        }
+    } catch (const std::exception &e) {
+        std::cerr << "Server error: " << e.what() << std::endl;
+        return 1;
+    }
+    return 0;
+}
+```
+
+**5. File Transfer Client:**
+
+```cpp
+#include "socket.hpp"
+#include "socket_address.hpp"
+#include "data_buffer.hpp"
+#include <iostream>
+#include <fstream>
+
+bool send_file(const std::string &filename, const std::string &server_ip, int port) {
+    try {
+        // Open file
+        std::ifstream file(filename, std::ios::binary);
+        if (!file.is_open()) {
+            std::cerr << "Cannot open file: " << filename << std::endl;
+            return false;
+        }
+
+        // Connect to server
+        hamza_socket::socket client(hamza_socket::Protocol::TCP);
+        hamza_socket::socket_address server_addr(
+            hamza_socket::port(port),
+            hamza_socket::ip_address(server_ip)
+        );
+        client.connect(server_addr);
+        auto conn = client.accept();
+
+        // Send filename first
+        hamza_socket::data_buffer filename_msg(filename);
+        conn->send(filename_msg);
+
+        // Send file contents in chunks
+        char buffer[4096];
+        while (file.read(buffer, sizeof(buffer)) || file.gcount() > 0) {
+            hamza_socket::data_buffer chunk(buffer, file.gcount());
+            conn->send(chunk);
+        }
+
+        std::cout << "File sent successfully: " << filename << std::endl;
+        conn->close();
+        return true;
+
+    } catch (const std::exception &e) {
+        std::cerr << "File transfer error: " << e.what() << std::endl;
+        return false;
+    }
+}
+```

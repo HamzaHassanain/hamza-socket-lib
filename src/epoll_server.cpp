@@ -17,9 +17,6 @@
  * - Event buffer auto-sizing to handle connection bursts
  * - Partial send/receive handling for large data transfers
  * - Minimal memory allocations in hot paths
- *
- * @author Hamza Hassan
- * @date 2025
  */
 
 // check if we are on linux and platform that supports epoll
@@ -380,6 +377,7 @@ namespace hamza_socket
                 next_event:
                     continue;
                 }
+                // After processing all events, you try to accept the connections that failed
                 if (listener_socket)
                     try_accept();
             }
