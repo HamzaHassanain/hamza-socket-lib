@@ -218,8 +218,6 @@ namespace hamza_socket
                     // grow event buffer if saturated
                     events.resize(events.size() * 2);
                 }
-                std::cout << "We Have " << n << " events to process" << std::endl;
-                std::cout << "Current open connections: " << current_open_connections << std::endl;
                 // Process each ready event
                 for (int i = 0; i < n; ++i)
                 {
@@ -230,6 +228,7 @@ namespace hamza_socket
                     if (listener_socket && fd == listener_socket->get_fd())
                     {
                         std::cout << "Got some connections needs accepting" << std::endl;
+                        std::cout << "Current open connections: " << current_open_connections << std::endl;
                         // Accept as many connections as possible (edge-triggered)
                         while (true)
                         {
