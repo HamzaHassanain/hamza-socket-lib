@@ -115,8 +115,12 @@ namespace hamza_socket
         /// Current number of open connections
         ssize_t current_open_connections = 10;
 
-        /// Maximum number of file descriptors
+        /// Maximum number of file descriptors, if failed setting to the specified max
         ssize_t max_fds = 1024;
+
+        /// @brief  tries to accept connections
+        void try_accept();
+
         /**
          * @brief Sets file descriptor limit for the process
          * @param soft Soft limit for file descriptors

@@ -50,7 +50,55 @@
 
 namespace hamza_socket
 {
+    void epoll_server::try_accept()
+    {
 
+        // Accept as many connections as possible (edge-triggered)
+        while (true)
+        {
+            try
+            {
+                sockaddr_storage client_addr;
+                socklen_t client_addr_len = sizeof(client_addr);
+
+                // Use accept4 for efficiency (sets NONBLOCK + CLOEXEC atomically)
+                auto cfd = ::accept4(listener_socket->get_fd(),
+                                     reinterpret_cast<sockaddr *>(&client_addr),
+                                     &client_addr_len,
+                                     SOCK_NONBLOCK | SOCK_CLOEXEC);
+                if (cfd < 0)
+                {
+                    if (errno == EAGAIN || errno == EWOULDBLOCK)
+                        break; // No more connections to accept
+                    break;     // Max File Descriptors reached, no need to raise exception
+                }
+
+                // Optional: disable Nagle for latency-sensitive workloads.
+                // int one = 1; setsockopt(cfd, IPPROTO_TCP, TCP_NODELAY, &one, sizeof(one));
+
+                // Add new connection to epoll monitoring
+                if (add_epoll(cfd, EPOLLIN | EPOLLET) < 0)
+                {
+                    close_socket(cfd);
+                    throw std::runtime_error("epoll_ctl ADD conn error: " + std::string(strerror(errno)));
+                    continue;
+                }
+
+                // Create connection object and add to tracking
+                auto connptr = std::make_shared<connection>(file_descriptor(cfd),
+                                                            listener_socket->get_bound_address(),
+                                                            socket_address(client_addr));
+                current_open_connections++;
+                conns.emplace(cfd, epoll_connection{connptr, {}, false});
+                on_connection_opened(connptr);
+            }
+            catch (const std::exception &e)
+            {
+                on_exception_occurred(e);
+                // Continue accepting other connections despite individual failures
+            }
+        }
+    }
     /**
      * Implementation Details:
      * - Uses setrlimit() system call with RLIMIT_NOFILE
@@ -196,7 +244,6 @@ namespace hamza_socket
     void epoll_server::epoll_loop(int timeout)
     {
         on_listen_success();
-
         while (!g_stop)
             try
             {
@@ -227,54 +274,7 @@ namespace hamza_socket
                     // Handle new connections on listener socket
                     if (listener_socket && fd == listener_socket->get_fd())
                     {
-                        std::cout << "Got some connections needs accepting" << std::endl;
-                        std::cout << "Current open connections: " << current_open_connections << std::endl;
-                        // Accept as many connections as possible (edge-triggered)
-                        while (true)
-                        {
-                            try
-                            {
-                                sockaddr_storage client_addr;
-                                socklen_t client_addr_len = sizeof(client_addr);
-
-                                // Use accept4 for efficiency (sets NONBLOCK + CLOEXEC atomically)
-                                auto cfd = ::accept4(listener_socket->get_fd(),
-                                                     reinterpret_cast<sockaddr *>(&client_addr),
-                                                     &client_addr_len,
-                                                     SOCK_NONBLOCK | SOCK_CLOEXEC);
-                                if (cfd < 0)
-                                {
-                                    if (errno == EAGAIN || errno == EWOULDBLOCK)
-                                        break; // No more connections to accept
-                                    throw std::runtime_error("accept4 failed: " + std::string(strerror(errno)));
-                                    break;
-                                }
-
-                                // Optional: disable Nagle for latency-sensitive workloads.
-                                // int one = 1; setsockopt(cfd, IPPROTO_TCP, TCP_NODELAY, &one, sizeof(one));
-
-                                // Add new connection to epoll monitoring
-                                if (add_epoll(cfd, EPOLLIN | EPOLLET) < 0)
-                                {
-                                    close_socket(cfd);
-                                    throw std::runtime_error("epoll_ctl ADD conn error: " + std::string(strerror(errno)));
-                                    continue;
-                                }
-
-                                // Create connection object and add to tracking
-                                auto connptr = std::make_shared<connection>(file_descriptor(cfd),
-                                                                            listener_socket->get_bound_address(),
-                                                                            socket_address(client_addr));
-                                current_open_connections++;
-                                conns.emplace(cfd, epoll_connection{connptr, {}, false});
-                                on_connection_opened(connptr);
-                            }
-                            catch (const std::exception &e)
-                            {
-                                on_exception_occurred(e);
-                                // Continue accepting other connections despite individual failures
-                            }
-                        }
+                        try_accept();
                         continue;
                     }
 
@@ -380,6 +380,8 @@ namespace hamza_socket
                 next_event:
                     continue;
                 }
+                if (listener_socket)
+                    try_accept();
             }
             catch (const std::exception &e)
             {
