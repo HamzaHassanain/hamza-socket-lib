@@ -231,7 +231,7 @@ namespace hamza_socket
                     {
                         std::cout << "Got some connections needs accepting" << std::endl;
                         // Accept as many connections as possible (edge-triggered)
-                        while (current_open_connections < max_fds)
+                        while (true)
                         {
                             try
                             {
