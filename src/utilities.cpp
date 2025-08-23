@@ -446,10 +446,6 @@ namespace hamza_socket
             sock_ptr->bind(hamza_socket::socket_address(hamza_socket::port(port), hamza_socket::ip_address(ip)));
             sock_ptr->listen(backlog);
 
-            // Optional: Enable per-CPU accept queues for multi-process models (one process per core).
-            // If you run multiple worker *processes*, uncomment this:
-            // sock_ptr->set_option(SOL_SOCKET, SO_REUSEPORT, 1);
-
             // Optional: reduce wakeups by notifying only when data arrives (Linux-specific).
             // int defer_secs = 1;
             // sock_ptr->set_option(IPPROTO_TCP, TCP_DEFER_ACCEPT, defer_secs);

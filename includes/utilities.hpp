@@ -208,8 +208,21 @@ namespace hamza_socket
     bool is_socket_connected(socket_t socket);
 
     std::string get_error_message();
+
+    /// @brief Convert string to uppercase.
+    /// @param input String to convert
+    /// @note does not modify the original string, returns a new uppercase string
+    /// @return Uppercase version of input string
     std::string to_upper_case(const std::string &input);
 
+    /**
+     * @brief Create a listener socket.
+     *
+     * @param port Port number to listen on
+     * @param ip IP address to bind to (default: "0.0.0.0")
+     * @param backlog Maximum number of pending connections (default: SOMAXCONN)
+     * @return std::shared_ptr<hamza_socket::socket>
+     */
     std::shared_ptr<hamza_socket::socket> make_listener_socket(uint16_t port, const std::string &ip = "0.0.0.0", int backlog = SOMAXCONN);
 
 }
