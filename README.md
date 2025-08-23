@@ -142,7 +142,7 @@ server_socket.listen();
 auto conn = server_socket.accept();
 
 // Reliable data transfer
-conn.send(response_data);
+conn->send(response_data);
 ```
 
 ## Building The Project
@@ -151,13 +151,10 @@ conn.send(response_data);
 
 - CMake 3.10 or higher
 - C++17 compatible compiler (GCC 7+, Clang 5+, MSVC 2017+)
-- Standard networking libraries (automatically linked)
 
 ### How to build
 
 This guide will walk you through cloning, building, and running the project on both Linux and Windows systems.
-
-### Prerequisites
 
 Before you start, ensure you have the following installed:
 
@@ -343,7 +340,7 @@ hamza-http-server-lib/
 │   └── socket_lib.lib       # Static library (Windows, library mode)
 ├── src/                      # Source files
 ├── includes/                 # Header files
-├── app.cpp                   # Example application
+├── app.cpp                   # Example application (Ignored if SOCKET_LOCAL_TEST=0 or not found at all)
 ├── CMakeLists.txt           # Build configuration
 ├── .env                     # Build mode configuration
 └── build.sh                   # Build script (Linux/Mac)
@@ -369,7 +366,6 @@ target_include_directories(my_app PRIVATE /path/to/hamza-socket-lib/includes)
 # Link against the library
 add_executable(my_app main.cpp)
 target_link_libraries(my_app ${HAMZA_SOCKET_LIB})
-target_include_directories(my_app PRIVATE /path/to/hamza-socket-lib/includes)
 ```
 
 ## API Documentation
@@ -581,7 +577,7 @@ For detailed method signatures and advanced usage patterns, consult the comprehe
 // - Purpose: High-performance Linux epoll-based TCP server for thousands of concurrent connections.
 // - Platform support: Linux only (requires epoll system call)
 // - Key constructor:
-  epoll_server(int max_fds) // — specify maximum file descriptors
+  epoll_server(int max_fds) // — specify number of maximum open file descriptors (more files, means more memory usage)
 // - Server management:
   virtual void listen(int timeout) override // — start epoll event loop
   virtual bool register_listener_socket(std::shared_ptr<socket> sock_ptr) // — register listening socket
@@ -599,9 +595,9 @@ For detailed method signatures and advanced usage patterns, consult the comprehe
   virtual void on_waiting_for_activity() override
 // - Performance features:
   // - Edge-triggered epoll for O(1) event notification
+  // - Efficient batch processing of events
   // - Non-blocking I/O throughout
   // - Automatic write buffering and flow control
-  // - Scales to thousands of concurrent connections
 ```
 
 ### hamza_socket::utilities
