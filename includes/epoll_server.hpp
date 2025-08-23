@@ -299,7 +299,9 @@ namespace hamza_socket
          *
          * @note Virtual function - can be overridden by derived classes
          */
-        virtual void on_waiting_for_activity() override;
+        virtual void on_waiting_for_activity() override
+        {
+        }
 
     public:
         /**
@@ -331,7 +333,7 @@ namespace hamza_socket
 
         /**
          * @brief Starts the server event loop
-         * @param timeout Timeout in milliseconds for epoll_wait calls (default: 1000ms)
+         * @param timeout Timeout in milliseconds for epoll_wait calls
          *
          * Starts the main event loop that processes:
          * - New incoming connections
@@ -346,7 +348,7 @@ namespace hamza_socket
          * @note Overrides tcp_server::listen
          * @note This method blocks until server shutdown
          */
-        virtual void listen(int timeout = 1000) override;
+        virtual void listen(int timeout) override;
 
         /**
          * @brief Registers a listening socket with the epoll server
