@@ -316,17 +316,55 @@ namespace hamza_socket
                     }
                     epoll_connection &c = it->second;
 
+                    // Handle write flow control and output queue management
+                    if (!c.outq.empty())
+                    {
+                        // Try to flush immediately to avoid extra EPOLLOUT wakeup
+                        if (flush_writes(c))
+                        {
+                            // All data sent, disable write monitoring if enabled
+                            if (c.want_write)
+                            {
+                                c.want_write = false;
+                                mod_epoll(fd, EPOLLIN | EPOLLET);
+                            }
+                        }
+                        else
+                        {
+                            // Data remains, ensure write monitoring is enabled
+                            if (!c.want_write)
+                            {
+                                c.want_write = true;
+                                mod_epoll(fd, EPOLLIN | EPOLLOUT | EPOLLET);
+                            }
+                        }
+                    }
+
+                    // Handle socket ready for writing (EPOLLOUT)
+                    if (ev & EPOLLOUT)
+                    {
+                        if (flush_writes(c))
+                        {
+                            // All data sent, disable write monitoring
+                            c.want_write = false;
+                            mod_epoll(fd, EPOLLIN | EPOLLET);
+                        }
+                        // If flush_writes returns false, keep EPOLLOUT enabled
+                    }
+
                     // Handle connection errors and closures
                     if (ev & (EPOLLERR | EPOLLHUP))
                     {
-                        close_conn(fd);
+                        if (!c.want_write)
+                            close_conn(fd);
                         continue;
                     }
 
                     // Handle custom close events (requested by application)
                     if (ev & HAMZA_CUSTOM_CLOSE_EVENT)
                     {
-                        close_conn(fd);
+                        if (!c.want_write)
+                            close_conn(fd);
                         continue;
                     }
 
@@ -367,42 +405,6 @@ namespace hamza_socket
                         {
                             on_exception_occurred(e);
                         }
-                    }
-
-                    // Handle write flow control and output queue management
-                    if (!c.outq.empty())
-                    {
-                        // Try to flush immediately to avoid extra EPOLLOUT wakeup
-                        if (flush_writes(c))
-                        {
-                            // All data sent, disable write monitoring if enabled
-                            if (c.want_write)
-                            {
-                                c.want_write = false;
-                                mod_epoll(fd, EPOLLIN | EPOLLET);
-                            }
-                        }
-                        else
-                        {
-                            // Data remains, ensure write monitoring is enabled
-                            if (!c.want_write)
-                            {
-                                c.want_write = true;
-                                mod_epoll(fd, EPOLLIN | EPOLLOUT | EPOLLET);
-                            }
-                        }
-                    }
-
-                    // Handle socket ready for writing (EPOLLOUT)
-                    if (ev & EPOLLOUT)
-                    {
-                        if (flush_writes(c))
-                        {
-                            // All data sent, disable write monitoring
-                            c.want_write = false;
-                            mod_epoll(fd, EPOLLIN | EPOLLET);
-                        }
-                        // If flush_writes returns false, keep EPOLLOUT enabled
                     }
 
                 next_event:

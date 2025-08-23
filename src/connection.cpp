@@ -105,6 +105,6 @@ EINTR: The function call was interrupted by a signal.
     connection::~connection()
     {
         // std::cout << "Destroying connection object " << local_addr.to_string() << " , FD=" << fd.get() << std::endl;
-        // close();
+        close();
     }
 };
