@@ -18,6 +18,7 @@ namespace hamza_socket
         virtual void on_message_received(std::shared_ptr<connection> conn, const data_buffer &db) = 0;
         virtual void on_listen_success() = 0;
         virtual void on_shutdown_success() = 0;
+        virtual void on_waiting_for_activity() = 0;
 
     public:
         virtual void listen(int timeout = 1000) = 0;

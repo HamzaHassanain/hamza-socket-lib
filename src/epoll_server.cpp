@@ -232,6 +232,7 @@ namespace hamza_socket
         while (!g_stop)
             try
             {
+                on_waiting_for_activity();
                 // Wait for events with specified timeout
                 int n = epoll_wait(epoll_fd, events.data(), (int)events.size(), timeout);
                 if (n < 0)

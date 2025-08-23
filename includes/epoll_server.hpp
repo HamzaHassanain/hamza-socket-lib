@@ -291,6 +291,16 @@ namespace hamza_socket
          */
         virtual void on_shutdown_success() override;
 
+        /**
+         * @brief Called when the server is waiting for activity
+         *
+         * Default implementation logs the waiting state. Derived classes
+         * can override this to implement custom waiting behavior .
+         *
+         * @note Virtual function - can be overridden by derived classes
+         */
+        virtual void on_waiting_for_activity() override;
+
     public:
         /**
          * @brief Constructs an epoll server with specified file descriptor limit
