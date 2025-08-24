@@ -27,11 +27,11 @@ namespace hamza_socket
      * }
      * @endcode
      */
-    class socket_exception : public std::runtime_error
+    class socket_exception : public std::exception
     {
         std::string _type;
         std::string _thrower_function;
-        mutable std::string _formatted_message; // Cache for formatted message
+        std::string _formatted_message; // Cache for formatted message
 
     public:
         /**
@@ -41,24 +41,24 @@ namespace hamza_socket
          * @param thrower_function Name of the function that threw the exception
          */
         explicit socket_exception(const std::string &message, const std::string &type, const std::string &thrower_function = "SOCKET_FUNCTION")
-            : std::runtime_error(message), _type(type), _thrower_function(thrower_function) {}
+            : std::exception(), _type(type), _thrower_function(thrower_function), _formatted_message(message) {}
 
         /**
          * @brief Get the exception type name.
          * @return C-style string identifying the exception type
          */
-        virtual const char *type() const noexcept
+        virtual std::string type() const noexcept
         {
-            return _type.c_str();
+            return _type;
         }
 
         /**
          * @brief Get the name of the function that threw the exception.
          * @return C-style string identifying the thrower function
          */
-        virtual const char *thrower_function() const noexcept
+        virtual std::string thrower_function() const noexcept
         {
-            return _thrower_function.c_str();
+            return _thrower_function;
         }
 
         /**
@@ -66,14 +66,11 @@ namespace hamza_socket
          * @return C-style string containing the formatted error message
          * @note Thread-safe and returns a persistent pointer to the formatted message
          */
-        virtual const char *what() const noexcept override
+        virtual std::string what()
         {
             // Create formatted message once and cache it
-            if (_formatted_message.empty())
-            {
-                _formatted_message = "Socket Exception [" + _type + "] in " + _thrower_function + ": " + std::runtime_error::what();
-            }
-            return _formatted_message.c_str();
+            this->_formatted_message = "Socket Exception [" + _type + "] in " + _thrower_function + ": " + _formatted_message;
+            return _formatted_message;
         }
 
         /// Default virtual destructor
