@@ -1,7 +1,7 @@
 #pragma once
 
-#include <socket.hpp>
-#include <connection.hpp>
+#include "socket.hpp"
+#include "connection.hpp"
 
 namespace hamza_socket
 {

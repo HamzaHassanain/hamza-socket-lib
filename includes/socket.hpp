@@ -9,14 +9,14 @@
 #else
 #include <netinet/in.h>
 #endif
-
-#include <socket_address.hpp>
-#include <file_descriptor.hpp>
-#include <data_buffer.hpp>
-#include <utilities.hpp>
-#include <exceptions.hpp>
-#include <connection.hpp>
 #include <atomic>
+
+#include "socket_address.hpp"
+#include "file_descriptor.hpp"
+#include "data_buffer.hpp"
+#include "utilities.hpp"
+#include "exceptions.hpp"
+#include "connection.hpp"
 
 namespace hamza_socket
 {
@@ -52,8 +52,8 @@ namespace hamza_socket
         /// Protocol type (TCP or UDP)
         Protocol protocol;
 
-        /// Atomic flag to indicate if the socket is open
-        std::atomic<bool> is_open{true};
+        /// flag to indicate if the socket is open
+        bool is_open{true};
 
     public:
         /// Default constructor deleted - sockets must be explicitly configured

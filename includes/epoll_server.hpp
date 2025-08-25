@@ -35,10 +35,10 @@
 #include <sys/resource.h>
 #include <signal.h>
 
-#include <tcp_server.hpp>
-#include <socket.hpp>
-#include <connection.hpp>
-#include <data_buffer.hpp>
+#include "tcp_server.hpp"
+#include "socket.hpp"
+#include "connection.hpp"
+#include "data_buffer.hpp"
 
 /// Custom epoll event used to signal connection closure
 const u_int32_t HAMZA_CUSTOM_CLOSE_EVENT = 3545940;

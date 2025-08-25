@@ -361,7 +361,9 @@ find_library(HAMZA_SOCKET_LIB
     PATHS /path/to/hamza-socket-lib/build
 )
 
-target_include_directories(my_app PRIVATE /path/to/hamza-socket-lib/includes)
+target_include_directories(my_app PRIVATE /path/to/hamza-socket-lib/)
+# include "socket-lib.hpp" in your cpp file for the full library
+# or use the includes directory directly
 
 # Link against the library
 add_executable(my_app main.cpp)
@@ -676,11 +678,12 @@ For detailed method signatures and advanced usage patterns, consult the comprehe
 **1. Basic TCP Echo Server with epoll (Linux):**
 
 ```cpp
-#include "epoll_server.hpp"
-#include "socket.hpp"
-#include "socket_address.hpp"
-#include "data_buffer.hpp"
-#include "utilities.hpp"
+
+#include "includes/epoll_server.hpp"
+#include "includes/socket.hpp"
+#include "includes/socket_address.hpp"
+#include "includes/data_buffer.hpp"
+#include "includes/utilities.hpp"
 
 #include <iostream>
 
@@ -749,9 +752,9 @@ int main() {
 **2. Simple TCP Client:**
 
 ```cpp
-#include "socket.hpp"
-#include "socket_address.hpp"
-#include "data_buffer.hpp"
+#include "includes/socket.hpp"
+#include "includes/socket_address.hpp"
+#include "includes/data_buffer.hpp"
 #include <iostream>
 #include <string>
 
@@ -790,9 +793,9 @@ int main() {
 **3. UDP Client/Server Example:**
 
 ```cpp
-#include "socket.hpp"
-#include "socket_address.hpp"
-#include "data_buffer.hpp"
+#include "includes/socket.hpp"
+#include "includes/socket_address.hpp"
+#include "includes/data_buffer.hpp"
 #include <iostream>
 
 // UDP Server
@@ -851,22 +854,25 @@ void udp_client_example() {
 **4. Basic TCP Server using Raw Socket (Cross-platform):**
 
 ```cpp
-#include "socket.hpp"
-#include "socket_address.hpp"
-#include "connection.hpp"
+#include "includes/socket.hpp"
+#include "includes/socket_address.hpp"
+#include "includes/connection.hpp"
 #include <iostream>
 #include <thread>
 
-void handle_client(std::shared_ptr<hamza_socket::connection> conn) {
-    try {
+void handle_client(std::shared_ptr<hamza_socket::connection> conn)
+{
+    try
+    {
         std::cout << "Handling client: " << conn->get_remote_address().to_string() << std::endl;
 
-        while (conn->is_connection_open()) {
+        while (conn->is_connection_open())
+        {
             // Receive data from client
             auto data = conn->receive();
-            if (data.empty()) break; // Client disconnected
-
             std::cout << "Received: " << data.to_string() << std::endl;
+            if (data.empty())
+                break; // Client disconnected
 
             // Echo back with prefix
             hamza_socket::data_buffer response("Echo: " + data.to_string());
@@ -875,25 +881,31 @@ void handle_client(std::shared_ptr<hamza_socket::connection> conn) {
 
         conn->close();
         std::cout << "Client disconnected." << std::endl;
-    } catch (const std::exception &e) {
+    }
+    catch (const std::exception &e)
+    {
         std::cerr << "Client handling error: " << e.what() << std::endl;
     }
 }
 
-int main() {
-    try {
+int main()
+{
+    try
+    {
         // Create and bind server socket
         hamza_socket::socket_address server_addr(
-            hamza_socket::port(8080),
-            hamza_socket::ip_address("0.0.0.0")
-        );
-        hamza_socket::socket server(server_addr, hamza_socket::Protocol::TCP);
+            hamza_socket::port(8000),
+            hamza_socket::ip_address("127.0.0.1"));
+        hamza_socket::socket server(hamza_socket::Protocol::TCP);
         server.set_reuse_address(true);
+        server.bind(server_addr);
+
         server.listen();
 
         std::cout << "TCP Server listening on " << server_addr.to_string() << std::endl;
 
-        while (true) {
+        while (true)
+        {
             // Accept incoming connections
             auto client_conn = server.accept();
 
@@ -901,7 +913,9 @@ int main() {
             std::thread client_thread(handle_client, client_conn);
             client_thread.detach(); // Let thread run independently
         }
-    } catch (const std::exception &e) {
+    }
+    catch (const std::exception &e)
+    {
         std::cerr << "Server error: " << e.what() << std::endl;
         return 1;
     }
@@ -912,9 +926,9 @@ int main() {
 **5. File Transfer Client:**
 
 ```cpp
-#include "socket.hpp"
-#include "socket_address.hpp"
-#include "data_buffer.hpp"
+#include "includes/socket.hpp"
+#include "includes/socket_address.hpp"
+#include "includes/data_buffer.hpp"
 #include <iostream>
 #include <fstream>
 

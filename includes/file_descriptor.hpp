@@ -1,6 +1,5 @@
 #pragma once
 
-#include <utilities.hpp>
 #include <iostream>
 
 // Platform-specific socket type definitions
@@ -13,6 +12,8 @@ typedef SOCKET socket_t; ///< Windows socket type (unsigned integer)
 #include <sys/socket.h>
 typedef int socket_t; ///< Unix socket type (signed integer)
 #endif
+
+#include "utilities.hpp"
 
 namespace hamza_socket
 {

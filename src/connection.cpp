@@ -1,5 +1,5 @@
-#include <connection.hpp>
-#include <utilities.hpp>
+#include "../includes/connection.hpp"
+#include "../includes/utilities.hpp"
 namespace hamza_socket
 {
 
@@ -20,7 +20,7 @@ namespace hamza_socket
      */
     ssize_t connection::send(const data_buffer &data)
     {
-        if (!is_open.load() || fd.get() == SOCKET_ERROR_VALUE || fd.get() == INVALID_SOCKET_VALUE)
+        if (!is_open || fd.get() == SOCKET_ERROR_VALUE || fd.get() == INVALID_SOCKET_VALUE)
         {
             return 0;
         }
@@ -40,16 +40,13 @@ namespace hamza_socket
      */
     data_buffer connection::receive()
     {
-        if (!is_open.load() || fd.get() == SOCKET_ERROR_VALUE || fd.get() == INVALID_SOCKET_VALUE)
+        if (!is_open || fd.get() == SOCKET_ERROR_VALUE || fd.get() == INVALID_SOCKET_VALUE)
         {
             return data_buffer();
         }
 
         data_buffer received_data;
-        char buffer[DEFAULT_BUFFER_SIZE];
-
-        /// ::recv(fd, buffer, sizeof(buffer), 0) - receive data from socket
-        /// Returns number of bytes read, 0 on EOF, -1 on error
+        char buffer[MAX_BUFFER_SIZE];
 
         int bytes_received = ::recv(fd.get(), buffer, sizeof(buffer), 0);
 
@@ -60,7 +57,6 @@ namespace hamza_socket
         }
         if (bytes_received == SOCKET_ERROR_VALUE)
         {
-
 /*
 EAGAIN or EWOULDBLOCK: The socket is non-blocking, and no data is currently available.
 ENOTCONN: The socket is not connected.
@@ -83,15 +79,17 @@ EINTR: The function call was interrupted by a signal.
             throw socket_exception("Failed to read data for fd " + std::to_string(fd.get()) + " " + std::string(get_error_message()), "SocketRead", __func__);
         }
 
+
+        
+        received_data.append(buffer, bytes_received);
         return received_data;
     }
 
     void connection::close()
     {
-        if (is_open.load())
+        if (is_open)
         {
-            // std::cout << "Closing connection to " << local_addr.to_string() << " , FD=" << fd.get() << std::endl;
-            is_open.store(false);
+            is_open = false;
             close_socket(fd.get());
             fd.invalidate();
         }
@@ -99,12 +97,11 @@ EINTR: The function call was interrupted by a signal.
 
     bool connection::is_connection_open() const
     {
-        return is_open.load();
+        return is_open;
     }
 
     connection::~connection()
     {
-        // std::cout << "Destroying connection object " << local_addr.to_string() << " , FD=" << fd.get() << std::endl;
         close();
     }
 };

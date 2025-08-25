@@ -1,7 +1,3 @@
-#include <socket.hpp>
-#include <file_descriptor.hpp>
-#include <utilities.hpp>
-#include <exceptions.hpp>
 #include <iostream>
 #include <stdexcept>
 #include <cstring>
@@ -29,13 +25,18 @@
 #define SOCKET_AGAIN EAGAIN
 #endif
 
+
+#include "../includes/socket.hpp"
+#include "../includes/file_descriptor.hpp"
+#include "../includes/utilities.hpp"
+#include "../includes/exceptions.hpp"
+
 namespace hamza_socket
 {
 
     socket::socket(const Protocol &protocol = Protocol::UDP)
         : protocol(protocol)
     {
-        // std::lock_guard<std::mutex> lock(mtx);
 
         // Create socket: ::socket(domain, type, protocol)
         // domain: AF_INET (IPv4) or AF_INET6 (IPv6)
@@ -60,7 +61,6 @@ namespace hamza_socket
     socket::socket(const socket_address &addr, const Protocol &protocol)
         : addr(addr)
     {
-        // std::lock_guard<std::mutex> lock(mtx);
 
         // Create socket: ::socket(domain, type, protocol)
         // domain: AF_INET (IPv4) or AF_INET6 (IPv6)
@@ -103,7 +103,6 @@ namespace hamza_socket
      */
     void socket::bind(const socket_address &addr)
     {
-        // std::lock_guard<std::mutex> lock(mtx);
 
         this->addr = addr;
 
@@ -124,7 +123,6 @@ namespace hamza_socket
      */
     void socket::listen(int backlog)
     {
-        // std::lock_guard<std::mutex> lock(mtx);
 
         // Verify this is a TCP socket - UDP doesn't support listen/accept
         if (protocol != Protocol::TCP)
@@ -149,7 +147,6 @@ namespace hamza_socket
      */
     std::shared_ptr<connection> socket::accept(bool NON_BLOCKING)
     {
-        // std::lock_guard<std::mutex> lock(mtx);
         // Verify this is a TCP socket - UDP doesn't have connections to accept
         if (protocol != Protocol::TCP)
         {
@@ -207,7 +204,6 @@ namespace hamza_socket
      */
     data_buffer socket::receive(socket_address &client_addr)
     {
-        // std::lock_guard<std::mutex> lock(mtx);
 
         // Verify this is a UDP socket - TCP uses receive_on_connection()
         if (protocol != Protocol::UDP)
@@ -245,8 +241,6 @@ namespace hamza_socket
      */
     void socket::send_to(const socket_address &addr, const data_buffer &data)
     {
-        // std::lock_guard<std::mutex> lock(mtx);
-
         // Verify this is a UDP socket - TCP uses send_on_connection()
         if (protocol != Protocol::UDP)
         {
@@ -277,7 +271,6 @@ namespace hamza_socket
      */
     socket_address socket::get_bound_address() const
     {
-        // std::lock_guard<std::mutex> lock(mtx);
         return addr;
     }
 
@@ -287,7 +280,6 @@ namespace hamza_socket
      */
     int socket::get_fd() const
     {
-        // std::lock_guard<std::mutex> lock(mtx);
 
         return fd.get();
     }
@@ -324,7 +316,6 @@ namespace hamza_socket
      */
     void socket::set_reuse_address(bool reuse)
     {
-        // std::lock_guard<std::mutex> lock(mtx);
 
         int optval = reuse ? 1 : 0;
 
@@ -347,7 +338,6 @@ namespace hamza_socket
      */
     void socket::set_non_blocking(bool enable)
     {
-        // std::lock_guard<std::mutex> lock(mtx);
 
 #if defined(_WIN32) || defined(_WIN64) || defined(__CYGWIN__)
         // Windows implementation using ioctlsocket
@@ -396,17 +386,17 @@ namespace hamza_socket
 
     bool socket::is_connected() const
     {
-        return is_open.load();
+        return is_open;
     }
 
     void socket::disconnect()
     {
-        if (is_open.load())
+        if (is_open)
         {
             // Close the socket and mark it as closed
             close_socket(fd.get());
             fd.invalidate();
-            is_open.store(false);
+            is_open = false;
         }
     }
 

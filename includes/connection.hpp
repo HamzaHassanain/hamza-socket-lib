@@ -1,11 +1,10 @@
 #pragma once
 
-#include <file_descriptor.hpp>
-#include <utilities.hpp>
-#include <socket_address.hpp>
-#include <data_buffer.hpp>
-#include <atomic>
-#include <mutex>
+#include "file_descriptor.hpp"
+#include "utilities.hpp"
+#include "socket_address.hpp"
+#include "data_buffer.hpp"
+
 namespace hamza_socket
 {
     /**
@@ -25,8 +24,8 @@ namespace hamza_socket
         /// Address of the remote socket
         socket_address remote_addr;
 
-        /// Atomic flag to indicate if the connection is open
-        std::atomic<bool> is_open{false};
+        /// flag to indicate if the connection is open
+        bool is_open = true;
 
     public:
         /**
@@ -51,7 +50,7 @@ namespace hamza_socket
             fd = std::move(other.fd);
             local_addr = other.local_addr;
             remote_addr = other.remote_addr;
-            is_open = other.is_open.load();
+            is_open = other.is_open;
             other.is_open = false;
 
             other.fd.invalidate();
@@ -63,7 +62,7 @@ namespace hamza_socket
                 fd = std::move(other.fd);
                 local_addr = other.local_addr;
                 remote_addr = other.remote_addr;
-                is_open = other.is_open.load();
+                is_open = other.is_open;
                 other.is_open = false;
 
                 other.fd.invalidate();

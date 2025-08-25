@@ -22,8 +22,6 @@
 // check if we are on linux and platform that supports epoll
 #if defined(__linux__) || defined(__linux)
 
-#include <epoll_server.hpp>
-
 #include <arpa/inet.h>
 #include <errno.h>
 #include <fcntl.h>
@@ -40,10 +38,11 @@
 #include <functional>
 #include <thread>
 
-#include <port.hpp>
-#include <socket_address.hpp>
-#include <utilities.hpp>
-#include <file_descriptor.hpp>
+#include "../includes/epoll_server.hpp"
+#include "../includes/port.hpp"
+#include "../includes/socket_address.hpp"
+#include "../includes/utilities.hpp"
+#include "../includes/file_descriptor.hpp"
 
 namespace hamza_socket
 {

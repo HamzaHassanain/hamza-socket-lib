@@ -14,7 +14,6 @@ file(GLOB SRC_FILES src/*.cpp)
 
 
 set(CMAKE_CXX_STANDARD 17)
-include_directories(${CMAKE_SOURCE_DIR}/includes)
 
 
 
