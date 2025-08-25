@@ -1,6 +1,6 @@
 #include "../includes/connection.hpp"
 #include "../includes/utilities.hpp"
-namespace hamza_socket
+namespace hh_socket
 {
 
     connection::connection(file_descriptor fd, const socket_address &local_addr, const socket_address &remote_addr)
@@ -65,12 +65,12 @@ ENOTCONN: The socket is not connected.
 ECONNRESET: The connection was forcibly closed by the peer.
 EINTR: The function call was interrupted by a signal.
 */
-#if defined(hamza_socket_PLATFORM_UNIX)
+#if defined(SOCKET_PLATFORM_UNIX)
             if (errno == EAGAIN || errno == EWOULDBLOCK || errno == EINTR)
             {
                 return data_buffer();
             }
-#elif defined(hamza_socket_PLATFORM_WINDOWS)
+#elif defined(SOCKET_PLATFORM_WINDOWS)
             if (WSAGetLastError() == WSAEWOULDBLOCK || WSAGetLastError() == WSAEAGAIN || WSAGetLastError() == WSAEINTR)
             {
                 return data_buffer();
@@ -79,8 +79,6 @@ EINTR: The function call was interrupted by a signal.
             throw socket_exception("Failed to read data for fd " + std::to_string(fd.get()) + " " + std::string(get_error_message()), "SocketRead", __func__);
         }
 
-
-        
         received_data.append(buffer, bytes_received);
         return received_data;
     }

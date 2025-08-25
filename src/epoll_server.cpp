@@ -44,7 +44,7 @@
 #include "../includes/utilities.hpp"
 #include "../includes/file_descriptor.hpp"
 
-namespace hamza_socket
+namespace hh_socket
 {
     void epoll_server::try_accept()
     {

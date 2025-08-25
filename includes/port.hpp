@@ -4,7 +4,7 @@
 #include <ostream>
 #include "utilities.hpp"
 #include "exceptions.hpp"
-namespace hamza_socket
+namespace hh_socket
 {
     /**
      * @brief Represents a network port number with validation.
@@ -25,11 +25,11 @@ namespace hamza_socket
         /**
          * @brief Validates and sets the port ID.
          * @param id Port number to validate and set
-         * @throws hamza_socket::invalid_port_exception if port is not in range 0-65535
+         * @throws hh_socket::invalid_port_exception if port is not in range 0-65535
          */
         void set_port_id(int id)
         {
-            if (id < hamza_socket::MIN_PORT || id > hamza_socket::MAX_PORT)
+            if (id < hh_socket::MIN_PORT || id > hh_socket::MAX_PORT)
             {
                 throw socket_exception("Port number must be in range 0-65535", "InvalidPort", __func__);
             }

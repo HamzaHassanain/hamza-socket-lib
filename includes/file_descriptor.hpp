@@ -15,7 +15,7 @@ typedef int socket_t; ///< Unix socket type (signed integer)
 
 #include "utilities.hpp"
 
-namespace hamza_socket
+namespace hh_socket
 {
     /**
      * @brief A cross-platform wrapper for file descriptors and socket handles.

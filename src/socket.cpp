@@ -25,13 +25,12 @@
 #define SOCKET_AGAIN EAGAIN
 #endif
 
-
 #include "../includes/socket.hpp"
 #include "../includes/file_descriptor.hpp"
 #include "../includes/utilities.hpp"
 #include "../includes/exceptions.hpp"
 
-namespace hamza_socket
+namespace hh_socket
 {
 
     socket::socket(const Protocol &protocol = Protocol::UDP)

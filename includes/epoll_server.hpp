@@ -43,7 +43,7 @@
 /// Custom epoll event used to signal connection closure
 const u_int32_t HAMZA_CUSTOM_CLOSE_EVENT = 3545940;
 
-namespace hamza_socket
+namespace hh_socket
 {
     /**
      * @brief Connection state structure for epoll-managed connections

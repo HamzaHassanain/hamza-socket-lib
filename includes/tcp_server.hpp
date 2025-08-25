@@ -3,7 +3,7 @@
 #include "socket.hpp"
 #include "connection.hpp"
 
-namespace hamza_socket
+namespace hh_socket
 {
 
     class tcp_server

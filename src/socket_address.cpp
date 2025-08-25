@@ -5,7 +5,7 @@
 #include "../includes/family.hpp"
 #include "../includes/port.hpp"
 
-namespace hamza_socket
+namespace hh_socket
 {
     // Constructs socket address from IP, port, and family components, creating appropriate sockaddr structure
     socket_address::socket_address(const port &port_id, const ip_address &address, const family &family_id)

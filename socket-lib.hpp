@@ -1,5 +1,15 @@
 #pragma once
 
+#if defined(_WIN32) || defined(_WIN64) || defined(__CYGWIN__)
+#ifndef SOCKET_PLATFORM_WINDOWS
+#define SOCKET_PLATFORM_WINDOWS
+#endif
+#else
+#ifndef SOCKET_PLATFORM_UNIX
+#define SOCKET_PLATFORM_UNIX
+#endif
+#endif
+
 #include "includes/connection.hpp"
 #include "includes/data_buffer.hpp"
 #include "includes/epoll_server.hpp"

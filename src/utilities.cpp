@@ -4,7 +4,7 @@
 #include <mutex>
 #include <cstring>
 // Platform-specific includes
-#if defined(_WIN32) || defined(_WIN64) || defined(__CYGWIN__)
+#if defined(SOCKET_PLATFORM_WINDOWS)
 #include <winsock2.h>
 #include <ws2tcpip.h>
 #pragma comment(lib, "ws2_32.lib") // Link Windows socket library
@@ -27,7 +27,7 @@
 // Global mutex for thread-safe random port generation
 std::mutex get_random_free_port_mutex;
 
-namespace hamza_socket
+namespace hh_socket
 {
 
     /**
@@ -103,7 +103,7 @@ namespace hamza_socket
         // Set SO_REUSEADDR to avoid "Address already in use" errors
         // This allows immediate reuse of the port after testing
         int reuse = 1;
-#if defined(_WIN32) || defined(_WIN64) || defined(__CYGWIN__)
+#if defined(SOCKET_PLATFORM_WINDOWS)
         setsockopt(tcp_socket, SOL_SOCKET, SO_REUSEADDR, reinterpret_cast<const char *>(&reuse), sizeof(reuse));
 #else
         setsockopt(tcp_socket, SOL_SOCKET, SO_REUSEADDR, &reuse, sizeof(reuse));
@@ -136,7 +136,7 @@ namespace hamza_socket
         }
 
         // Set SO_REUSEADDR for UDP socket as well
-#if defined(_WIN32) || defined(_WIN64) || defined(__CYGWIN__)
+#if defined(SOCKET_PLATFORM_WINDOWS)
         setsockopt(udp_socket, SOL_SOCKET, SO_REUSEADDR, reinterpret_cast<const char *>(&reuse), sizeof(reuse));
 #else
         setsockopt(udp_socket, SOL_SOCKET, SO_REUSEADDR, &reuse, sizeof(reuse));
@@ -159,7 +159,7 @@ namespace hamza_socket
      */
     void convert_ip_address_to_network_order(const family &family_ip, const ip_address &address, void *addr)
     {
-#if defined(_WIN32) || defined(_WIN64) || defined(__CYGWIN__)
+#if defined(SOCKET_PLATFORM_WINDOWS)
         // Windows implementation using InetPtonA() function
         if (family_ip.get_family_id() == AF_INET)
         {
@@ -260,7 +260,7 @@ namespace hamza_socket
      */
     bool initialize_socket_library()
     {
-#if defined(_WIN32) || defined(_WIN64) || defined(__CYGWIN__)
+#if defined(SOCKET_PLATFORM_WINDOWS)
         // Windows Winsock initialization
         WSADATA wsaData;
 
@@ -284,7 +284,7 @@ namespace hamza_socket
      */
     void cleanup_socket_library()
     {
-#if defined(_WIN32) || defined(_WIN64) || defined(__CYGWIN__)
+#if defined(SOCKET_PLATFORM_WINDOWS)
         // Release Winsock resources and terminate socket usage
         // Should be called before program termination
         WSACleanup();
@@ -301,7 +301,7 @@ namespace hamza_socket
      */
     void close_socket(socket_t socket)
     {
-#if defined(_WIN32) || defined(_WIN64) || defined(__CYGWIN__)
+#if defined(SOCKET_PLATFORM_WINDOWS)
         // Windows uses closesocket() for socket handles
         // Different from CloseHandle() used for other Windows objects
         closesocket(socket);
@@ -321,7 +321,7 @@ namespace hamza_socket
      */
     bool is_valid_socket(socket_t socket)
     {
-#if defined(_WIN32) || defined(_WIN64) || defined(__CYGWIN__)
+#if defined(SOCKET_PLATFORM_WINDOWS)
         // Windows invalid socket constant is INVALID_SOCKET (~0)
         // Socket handles are unsigned integers on Windows
         return socket != INVALID_SOCKET;
@@ -339,7 +339,7 @@ namespace hamza_socket
      */
     bool is_socket_open(int fd)
     {
-#if defined(_WIN32) || defined(_WIN64) || defined(__CYGWIN__)
+#if defined(SOCKET_PLATFORM_WINDOWS)
         // Windows implementation with proper type casting
         int type;
         int type_len = sizeof(type);
@@ -372,7 +372,7 @@ namespace hamza_socket
             return false;
         }
 
-#if defined(_WIN32) || defined(_WIN64) || defined(__CYGWIN__)
+#if defined(SOCKET_PLATFORM_WINDOWS)
         // Windows connection state checking
         int error = 0;
         int error_len = sizeof(error);
@@ -418,7 +418,7 @@ namespace hamza_socket
     std::string get_error_message()
     {
         {
-#if defined(_WIN32) || defined(_WIN64) || defined(__CYGWIN__)
+#if defined(SOCKET_PLATFORM_WINDOWS)
             return std::to_string(WSAGetLastError());
 #else
             return std::string(strerror(errno));
@@ -435,16 +435,16 @@ namespace hamza_socket
         return upper_case_str;
     }
 
-    std::shared_ptr<hamza_socket::socket> make_listener_socket(uint16_t port, const std::string &ip, int backlog)
+    std::shared_ptr<hh_socket::socket> make_listener_socket(uint16_t port, const std::string &ip, int backlog)
     {
         try
         {
-            auto sock_ptr = std::make_shared<hamza_socket::socket>(hamza_socket::Protocol::TCP);
+            auto sock_ptr = std::make_shared<hh_socket::socket>(hh_socket::Protocol::TCP);
 
             sock_ptr->set_reuse_address(true);
             sock_ptr->set_non_blocking(true);
             sock_ptr->set_close_on_exec(true);
-            sock_ptr->bind(hamza_socket::socket_address(hamza_socket::port(port), hamza_socket::ip_address(ip)));
+            sock_ptr->bind(hh_socket::socket_address(hh_socket::port(port), hh_socket::ip_address(ip)));
             sock_ptr->listen(backlog);
 
             // Optional: reduce wakeups by notifying only when data arrives (Linux-specific).

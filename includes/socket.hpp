@@ -18,7 +18,7 @@
 #include "exceptions.hpp"
 #include "connection.hpp"
 
-namespace hamza_socket
+namespace hh_socket
 {
     /**
      * @brief Cross-platform socket wrapper for TCP and UDP network operations.

@@ -5,7 +5,7 @@
 #include "socket_address.hpp"
 #include "data_buffer.hpp"
 
-namespace hamza_socket
+namespace hh_socket
 {
     /**
      * @brief Represents a connection to a remote socket.

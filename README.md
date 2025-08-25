@@ -1,6 +1,6 @@
 # Simple C++ Socket Library
 
-A high-performance, cross-platform C++ socket library built with modern C++17 features. This library provides comprehensive abstractions around low-level socket APIs, including support for both traditional select-based I/O multiplexing and high-performance epoll-based servers on Linux.
+A cross-platform C++ socket library built with modern C++17 features. This library provides comprehensive abstractions around low-level socket APIs, including support for both traditional select-based I/O multiplexing and high-performance epoll-based servers on Linux.
 
 ## Table of Contents
 
@@ -30,7 +30,6 @@ A high-performance, cross-platform C++ socket library built with modern C++17 fe
   - [Step 5: Run the Project](#step-5-run-the-project)
     - [Development Mode (SOCKET_LOCAL_TEST=1)](#development-mode-socket_local_test1)
     - [Library Mode (SOCKET_LOCAL_TEST≠1)](#library-mode-socket_local_test1)
-  - [Project Structure After Build](#project-structure-after-build)
   - [Using the Library in Your Own Project](#using-the-library-in-your-own-project)
 
 - [API Documentation](#api-documentation)
@@ -45,7 +44,7 @@ Understanding the underlying networking concepts is crucial for effectively usin
 
 ```cpp
 // Creating a socket in our library
-hamza_socket::socket server_socket(addr, hamza_socket::Protocol::TCP, true);
+hh_socket::socket server_socket(addr, hh_socket::Protocol::TCP, true);
 ```
 
 **Key Socket Concepts:**
@@ -137,7 +136,7 @@ Client                    Server
 
 ```cpp
 // Create TCP socket
-hamza_socket::socket server_socket(addr, hamza_socket::Protocol::TCP, true);
+hh_socket::socket server_socket(addr, hh_socket::Protocol::TCP, true);
 
 // Listen for connections (server becomes passive)
 server_socket.listen();
@@ -149,7 +148,7 @@ auto conn = server_socket.accept();
 conn->send(response_data);
 ```
 
-### Prerequisites
+## Prerequisites
 
 - CMake 3.10 or higher
 - C++17 compatible compiler (GCC 7+, Clang 5+, MSVC 2017+)
@@ -198,7 +197,7 @@ You just need to clone the repository as a submodule:
 
 ```bash
 # In your base project directory, run the following command
-git submodule add https://github.com/HamzaHassanain/hamza-socket-lib.git ./submodules/socket-lib
+git submodule add https://github.com/HamzaHassanain/hh-socket-lib.git ./submodules/socket-lib
 ```
 
 Then in your project's CMakeLists.txt, include the submodule:
@@ -266,21 +265,21 @@ Then in your cpp file, include the socket library header:
 int main() {
     try {
         // Create server address and bind UDP socket
-        hamza_socket::socket_address server_addr(hamza_socket::port(8080));
-        hamza_socket::socket udp_server(server_addr, hamza_socket::Protocol::UDP);
+        hh_socket::socket_address server_addr(hh_socket::port(8080));
+        hh_socket::socket udp_server(server_addr, hh_socket::Protocol::UDP);
 
         std::cout << "UDP Server listening on port 8080..." << std::endl;
 
         while (true) {
             // Receive from any client
-            hamza_socket::socket_address client_addr;
+            hh_socket::socket_address client_addr;
             auto data = udp_server.receive(client_addr);
 
             std::cout << "Received from " << client_addr.to_string()
                       << ": " << data.to_string() << std::endl;
 
             // Echo back to sender
-            hamza_socket::data_buffer response("Echo: " + data.to_string());
+            hh_socket::data_buffer response("Echo: " + data.to_string());
             udp_server.send_to(client_addr, response);
         }
     } catch (const std::exception &e) {
@@ -294,18 +293,16 @@ int main() {
 
 This guide will walk you through cloning, building, and running the project on both Linux and Windows systems.
 
-Before you start, ensure you have the following installed:
-
 ### Step 1: Clone the Repository
 
 Open your terminal (Linux) or Command Prompt/PowerShell (Windows):
 
 ```bash
 # Clone the repository
-git clone https://github.com/HamzaHassanain/hamza-socket-lib.git
+git clone https://github.com/HamzaHassanain/hh-socket-lib.git
 
 # Navigate to the project directory
-cd hamza-socket-lib
+cd hh-socket-lib
 
 # Verify you're in the right directory
 ls -la  # Linux/Mac
@@ -430,18 +427,18 @@ cmake_minimum_required(VERSION 3.10)
 project(my_project)
 
 # Find the library
-find_library(HAMZA_SOCKET_LIB
+find_library(SOCKET_LIB
     NAMES socket_lib
-    PATHS /path/to/hamza-socket-lib/build
+    PATHS /path/to/hh-socket-lib/build
 )
 
-# include "path-to-hamza-socket-lib/socket-lib.hpp" in your cpp file for the full library
+# include "path-to-hh-socket-lib/socket-lib.hpp" in your cpp file for the full library
 # or un-comment the bellow line
-# target_include_directories(my_app PRIVATE /path/to/hamza-socket-lib/includes)
+# target_include_directories(my_app PRIVATE /path/to/hh-socket-lib/includes)
 
 # Link against the library
 add_executable(my_app main.cpp)
-target_link_libraries(my_app ${HAMZA_SOCKET_LIB})
+target_link_libraries(my_app ${SOCKET_LIB})
 ```
 
 ## API Documentation
@@ -450,7 +447,7 @@ Below is a reference of the core public classes and their commonly used methods.
 
 For detailed method signatures and advanced usage patterns, consult the comprehensive inline documentation in the header files located in `includes/` directory.
 
-### hamza_socket::file_descriptor
+### hh_socket::file_descriptor
 
 ```cpp
 #include "file_descriptor.h"
@@ -463,12 +460,12 @@ For detailed method signatures and advanced usage patterns, consult the comprehe
 // - Important methods:
   int get() const  //— raw descriptor value (or INVALID_SOCKET_VALUE)
   bool is_valid() const
-  void invalidate() const
+  void invalidate() const // resets the file descriptor to invalid socket value
   // - comparison operators: `operator==`, `operator!=`, `operator<`
   friend std::ostream &operator<<(std::ostream &os, const file_descriptor &fd);
 ```
 
-### hamza_socket::ip_address
+### hh_socket::ip_address
 
 ```cpp
 #include "ip_address.h"
@@ -483,7 +480,7 @@ For detailed method signatures and advanced usage patterns, consult the comprehe
   friend std::ostream &operator<<(std::ostream &os, const ip_address &ip);
 ```
 
-### hamza_socket::port
+### hh_socket::port
 
 ```cpp
 #include "port.h"
@@ -498,7 +495,7 @@ For detailed method signatures and advanced usage patterns, consult the comprehe
   friend std::ostream &operator<<(std::ostream &os, const port &p);
 ```
 
-### hamza_socket::family
+### hh_socket::family
 
 ```cpp
 #include "family.h"
@@ -512,7 +509,7 @@ For detailed method signatures and advanced usage patterns, consult the comprehe
   friend std::ostream &operator<<(std::ostream &os, const family &f);
 ```
 
-### hamza_socket::socket_address
+### hh_socket::socket_address
 
 ```cpp
 #include "socket_address.hpp"
@@ -532,7 +529,7 @@ For detailed method signatures and advanced usage patterns, consult the comprehe
   socklen_t get_sock_addr_len() const
 ```
 
-### hamza_socket::data_buffer
+### hh_socket::data_buffer
 
 ```cpp
 #include "data_buffer.hpp"
@@ -554,7 +551,7 @@ For detailed method signatures and advanced usage patterns, consult the comprehe
   std::string to_string() const // — convert to string
 ```
 
-### hamza_socket::socket_exception
+### hh_socket::socket_exception
 
 ```cpp
 #include "exceptions.hpp"
@@ -568,7 +565,7 @@ For detailed method signatures and advanced usage patterns, consult the comprehe
   virtual const char *what() const noexcept override // — formatted error message
 ```
 
-### hamza_socket::socket
+### hh_socket::socket
 
 ```cpp
 #include "socket.hpp"
@@ -599,7 +596,7 @@ For detailed method signatures and advanced usage patterns, consult the comprehe
   bool operator<(const socket &other) const // — for container ordering
 ```
 
-### hamza_socket::connection
+### hh_socket::connection
 
 ```cpp
 #include "connection.hpp"
@@ -620,7 +617,7 @@ For detailed method signatures and advanced usage patterns, consult the comprehe
   socket_address get_local_address() const
 ```
 
-### hamza_socket::tcp_server
+### hh_socket::tcp_server
 
 ```cpp
 #include "tcp_server.hpp"
@@ -645,7 +642,7 @@ For detailed method signatures and advanced usage patterns, consult the comprehe
   virtual void stop_server() = 0 // — request graceful shutdown
 ```
 
-### hamza_socket::epoll_server
+### hh_socket::epoll_server
 
 ```cpp
 #include "epoll_server.hpp"
@@ -676,7 +673,7 @@ For detailed method signatures and advanced usage patterns, consult the comprehe
   // - Automatic write buffering and flow control
 ```
 
-### hamza_socket::utilities
+### hh_socket::utilities
 
 ```cpp
 #include "utilities.hpp"
@@ -743,7 +740,7 @@ For detailed method signatures and advanced usage patterns, consult the comprehe
   // — Convert string to uppercase (returns new string, original unchanged)
 
 // - High-level socket creation:
-  std::shared_ptr<hamza_socket::socket> make_listener_socket(uint16_t port, const std::string &ip = "0.0.0.0", int backlog = SOMAXCONN)
+  std::shared_ptr<hh_socket::socket> make_listener_socket(uint16_t port, const std::string &ip = "0.0.0.0", int backlog = SOMAXCONN)
   // — Create a ready-to-use TCP listener socket bound to specified address and port
 ```
 
@@ -761,24 +758,24 @@ For detailed method signatures and advanced usage patterns, consult the comprehe
 
 #include <iostream>
 
-class EchoServer : public hamza_socket::epoll_server {
+class EchoServer : public hh_socket::epoll_server {
 public:
-    EchoServer() : hamza_socket::epoll_server(1000) {} // Max 1000 connections
+    EchoServer() : hh_socket::epoll_server(1000) {} // Max 1000 connections
 
 protected:
-    void on_connection_opened(std::shared_ptr<hamza_socket::connection> conn) override {
+    void on_connection_opened(std::shared_ptr<hh_socket::connection> conn) override {
         std::cout << "Client connected from: " << conn->get_remote_address().to_string() << std::endl;
     }
 
-    void on_message_received(std::shared_ptr<hamza_socket::connection> conn,
-                           const hamza_socket::data_buffer &message) override {
+    void on_message_received(std::shared_ptr<hh_socket::connection> conn,
+                           const hh_socket::data_buffer &message) override {
         std::cout << "Received: " << message.to_string() << std::endl;
         // Echo the message back
         send_message(conn, message);
         close_connection(conn);
     }
 
-    void on_connection_closed(std::shared_ptr<hamza_socket::connection> conn) override {
+    void on_connection_closed(std::shared_ptr<hh_socket::connection> conn) override {
         std::cout << "Client disconnected: " << conn->get_remote_address().to_string() << std::endl;
     }
 
@@ -802,13 +799,13 @@ protected:
 int main() {
     try {
         // Create server address (bind to all interfaces on port 8080)
-        hamza_socket::socket_address server_addr(
-            hamza_socket::port(8080),
-            hamza_socket::ip_address("0.0.0.0")
+        hh_socket::socket_address server_addr(
+            hh_socket::port(8080),
+            hh_socket::ip_address("0.0.0.0")
         );
 
         // Create TCP listening socket
-        auto listener = hamza_socket::make_listener_socket(8080);
+        auto listener = hh_socket::make_listener_socket(8080);
 
         // Create and run the echo server
         EchoServer server;
@@ -835,12 +832,12 @@ int main() {
 int main() {
     try {
         // Create client socket
-        hamza_socket::socket client(hamza_socket::Protocol::TCP);
+        hh_socket::socket client(hh_socket::Protocol::TCP);
 
         // Connect to server
-        hamza_socket::socket_address server_addr(
-            hamza_socket::port(8080),
-            hamza_socket::ip_address("127.0.0.1")
+        hh_socket::socket_address server_addr(
+            hh_socket::port(8080),
+            hh_socket::ip_address("127.0.0.1")
         );
         client.connect(server_addr);
 
@@ -848,7 +845,7 @@ int main() {
         auto conn = client.accept(); // This creates a connection wrapper
 
         // Send a message
-        hamza_socket::data_buffer message("Hello, Server!");
+        hh_socket::data_buffer message("Hello, Server!");
         conn->send(message);
 
         // Receive response
@@ -876,21 +873,21 @@ int main() {
 void udp_server_example() {
     try {
         // Create server address and bind UDP socket
-        hamza_socket::socket_address server_addr(hamza_socket::port(8080));
-        hamza_socket::socket udp_server(server_addr, hamza_socket::Protocol::UDP);
+        hh_socket::socket_address server_addr(hh_socket::port(8080));
+        hh_socket::socket udp_server(server_addr, hh_socket::Protocol::UDP);
 
         std::cout << "UDP Server listening on port 8080..." << std::endl;
 
         while (true) {
             // Receive from any client
-            hamza_socket::socket_address client_addr;
+            hh_socket::socket_address client_addr;
             auto data = udp_server.receive(client_addr);
 
             std::cout << "Received from " << client_addr.to_string()
                       << ": " << data.to_string() << std::endl;
 
             // Echo back to sender
-            hamza_socket::data_buffer response("Echo: " + data.to_string());
+            hh_socket::data_buffer response("Echo: " + data.to_string());
             udp_server.send_to(client_addr, response);
         }
     } catch (const std::exception &e) {
@@ -902,20 +899,20 @@ void udp_server_example() {
 void udp_client_example() {
     try {
         // Create UDP client socket
-        hamza_socket::socket udp_client(hamza_socket::Protocol::UDP);
+        hh_socket::socket udp_client(hh_socket::Protocol::UDP);
 
         // Define server address
-        hamza_socket::socket_address server_addr(
-            hamza_socket::port(8080),
-            hamza_socket::ip_address("127.0.0.1")
+        hh_socket::socket_address server_addr(
+            hh_socket::port(8080),
+            hh_socket::ip_address("127.0.0.1")
         );
 
         // Send message
-        hamza_socket::data_buffer message("Hello UDP Server!");
+        hh_socket::data_buffer message("Hello UDP Server!");
         udp_client.send_to(server_addr, message);
 
         // Receive response
-        hamza_socket::socket_address response_addr;
+        hh_socket::socket_address response_addr;
         auto response = udp_client.receive(response_addr);
         std::cout << "Server response: " << response.to_string() << std::endl;
 
@@ -934,7 +931,7 @@ void udp_client_example() {
 #include <iostream>
 #include <thread>
 
-void handle_client(std::shared_ptr<hamza_socket::connection> conn)
+void handle_client(std::shared_ptr<hh_socket::connection> conn)
 {
     try
     {
@@ -949,7 +946,7 @@ void handle_client(std::shared_ptr<hamza_socket::connection> conn)
                 break; // Client disconnected
 
             // Echo back with prefix
-            hamza_socket::data_buffer response("Echo: " + data.to_string());
+            hh_socket::data_buffer response("Echo: " + data.to_string());
             conn->send(response);
         }
 
@@ -967,10 +964,10 @@ int main()
     try
     {
         // Create and bind server socket
-        hamza_socket::socket_address server_addr(
-            hamza_socket::port(8000),
-            hamza_socket::ip_address("127.0.0.1"));
-        hamza_socket::socket server(hamza_socket::Protocol::TCP);
+        hh_socket::socket_address server_addr(
+            hh_socket::port(8000),
+            hh_socket::ip_address("127.0.0.1"));
+        hh_socket::socket server(hh_socket::Protocol::TCP);
         server.set_reuse_address(true);
         server.bind(server_addr);
 
@@ -1016,22 +1013,22 @@ bool send_file(const std::string &filename, const std::string &server_ip, int po
         }
 
         // Connect to server
-        hamza_socket::socket client(hamza_socket::Protocol::TCP);
-        hamza_socket::socket_address server_addr(
-            hamza_socket::port(port),
-            hamza_socket::ip_address(server_ip)
+        hh_socket::socket client(hh_socket::Protocol::TCP);
+        hh_socket::socket_address server_addr(
+            hh_socket::port(port),
+            hh_socket::ip_address(server_ip)
         );
         client.connect(server_addr);
         auto conn = client.accept();
 
         // Send filename first
-        hamza_socket::data_buffer filename_msg(filename);
+        hh_socket::data_buffer filename_msg(filename);
         conn->send(filename_msg);
 
         // Send file contents in chunks
         char buffer[4096];
         while (file.read(buffer, sizeof(buffer)) || file.gcount() > 0) {
-            hamza_socket::data_buffer chunk(buffer, file.gcount());
+            hh_socket::data_buffer chunk(buffer, file.gcount());
             conn->send(chunk);
         }
 

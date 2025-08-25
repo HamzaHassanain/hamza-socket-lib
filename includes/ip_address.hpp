@@ -3,7 +3,7 @@
 #include <string>
 #include <ostream>
 
-namespace hamza_socket
+namespace hh_socket
 {
     /**
      * @brief Represents an IP address (IPv4 or IPv6) for network operations.

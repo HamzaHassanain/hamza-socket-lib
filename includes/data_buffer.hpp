@@ -4,7 +4,7 @@
 #include <vector>
 #include "utilities.hpp"
 
-namespace hamza_socket
+namespace hh_socket
 {
     /**
      * @brief A dynamic buffer for storing and managing binary data.

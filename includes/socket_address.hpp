@@ -7,7 +7,7 @@
 #include "family.hpp"
 #include "port.hpp"
 
-namespace hamza_socket
+namespace hh_socket
 {
     /**
      * @brief Represents a complete socket address combining IP, port, and address family.

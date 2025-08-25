@@ -3,19 +3,19 @@
 
 #include <iostream>
 
-class EchoServer : public hamza_socket::epoll_server
+class EchoServer : public hh_socket::epoll_server
 {
 public:
-    EchoServer() : hamza_socket::epoll_server(1000) {} // Max 1000 connections
+    EchoServer() : hh_socket::epoll_server(1000) {} // Max 1000 connections
 
 protected:
-    void on_connection_opened(std::shared_ptr<hamza_socket::connection> conn) override
+    void on_connection_opened(std::shared_ptr<hh_socket::connection> conn) override
     {
         std::cout << "Client connected from: " << conn->get_remote_address().to_string() << std::endl;
     }
 
-    void on_message_received(std::shared_ptr<hamza_socket::connection> conn,
-                             const hamza_socket::data_buffer &message) override
+    void on_message_received(std::shared_ptr<hh_socket::connection> conn,
+                             const hh_socket::data_buffer &message) override
     {
         std::cout << "Received: " << message.to_string() << std::endl;
         // Echo the message back
@@ -23,7 +23,7 @@ protected:
         close_connection(conn);
     }
 
-    void on_connection_closed(std::shared_ptr<hamza_socket::connection> conn) override
+    void on_connection_closed(std::shared_ptr<hh_socket::connection> conn) override
     {
         std::cout << "Client disconnected: " << conn->get_remote_address().to_string() << std::endl;
     }
@@ -55,7 +55,7 @@ int main()
     {
 
         // Create TCP listening socket
-        auto listener = hamza_socket::make_listener_socket(8080);
+        auto listener = hh_socket::make_listener_socket(8080);
 
         // Create and run the echo server
         EchoServer server;

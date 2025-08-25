@@ -7,7 +7,9 @@
 #include <memory>
 // Platform detection and common socket types
 #if defined(_WIN32) || defined(_WIN64) || defined(__CYGWIN__)
-#define hamza_socket_PLATFORM_WINDOWS
+#ifndef SOCKET_PLATFORM_WINDOWS
+#define SOCKET_PLATFORM_WINDOWS
+#endif
 #include <winsock2.h>
 #include <ws2tcpip.h>
 using socket_t = SOCKET;
@@ -15,7 +17,9 @@ using socklen_t = int;
 const socket_t INVALID_SOCKET_VALUE = INVALID_SOCKET;
 const int SOCKET_ERROR_VALUE = SOCKET_ERROR;
 #else
-#define hamza_socket_PLATFORM_UNIX
+#ifndef SOCKET_PLATFORM_UNIX
+#define SOCKET_PLATFORM_UNIX
+#endif
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
@@ -28,7 +32,7 @@ const socket_t INVALID_SOCKET_VALUE = -1;
 const int SOCKET_ERROR_VALUE = -1;
 #endif
 
-namespace hamza_socket
+namespace hh_socket
 {
     // forward declarations
     class ip_address;
@@ -38,7 +42,7 @@ namespace hamza_socket
     class socket_address;
 }
 
-namespace hamza_socket
+namespace hh_socket
 {
     // Network address family constants
     const int IPV4 = AF_INET;  ///< IPv4 address family identifier
@@ -221,8 +225,8 @@ namespace hamza_socket
      * @param port Port number to listen on
      * @param ip IP address to bind to (default: "0.0.0.0")
      * @param backlog Maximum number of pending connections (default: SOMAXCONN)
-     * @return std::shared_ptr<hamza_socket::socket>
+     * @return std::shared_ptr<hh_socket::socket>
      */
-    std::shared_ptr<hamza_socket::socket> make_listener_socket(uint16_t port, const std::string &ip = "0.0.0.0", int backlog = SOMAXCONN);
+    std::shared_ptr<hh_socket::socket> make_listener_socket(uint16_t port, const std::string &ip = "0.0.0.0", int backlog = SOMAXCONN);
 
 }

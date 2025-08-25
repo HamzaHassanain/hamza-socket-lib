@@ -3,7 +3,7 @@
 #include <stdexcept>
 #include <string>
 
-namespace hamza_socket
+namespace hh_socket
 {
     /**
      * @brief Base exception class for all socket-related errors.

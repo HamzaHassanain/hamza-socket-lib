@@ -8,7 +8,7 @@
 #include "exceptions.hpp"
 #include "utilities.hpp"
 
-namespace hamza_socket
+namespace hh_socket
 {
     /**
      * @brief Represents an address family for socket operations (IPv4, IPv6).
@@ -38,7 +38,7 @@ namespace hamza_socket
         /**
          * @brief Validates and sets the family ID.
          * @param id The address family ID to set
-         * @throws hamza_socket::socket_exception if the ID is not IPV4 or IPV6
+         * @throws hh_socket::socket_exception if the ID is not IPV4 or IPV6
          */
         void set_family_id(int id)
         {
