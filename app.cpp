@@ -1,9 +1,5 @@
 
-#include "includes/epoll_server.hpp"
-#include "includes/socket.hpp"
-#include "includes/socket_address.hpp"
-#include "includes/data_buffer.hpp"
-#include "includes/utilities.hpp"
+#include "socket-lib.hpp"
 
 #include <iostream>
 

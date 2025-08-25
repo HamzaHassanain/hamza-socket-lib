@@ -5,29 +5,33 @@ A high-performance, cross-platform C++ socket library built with modern C++17 fe
 ## Table of Contents
 
 - [Some Networking Fundamentals](#networking-fundamentals)
+
+- [Prerequisites](#prerequisites)
+
+  - [For Linux (Ubuntu/Debian)](#for-linux-ubuntudebian)
+  - [For Linux (CentOS/RHEL/Fedora)](#for-linux-centosrhelfedora)
+  - [For Windows](#for-windows)
+
+- [Quick Start](#quick-start)
+
+  - [Using Git Submodules](#using-git-submodules)
+
 - [Building the Project](#building-the-project)
 
-  - [Prerequisites](#prerequisites)
-  - [How to Build](#how-to-build)
-
-    - [Prerequisites](#prerequisites-1)
-      - [For Linux (Ubuntu/Debian)](#for-linux-ubuntudebian)
-      - [For Linux (CentOS/RHEL/Fedora)](#for-linux-centosrhelfedora)
-      - [For Windows](#for-windows)
-    - [Step 1: Clone the Repository](#step-1-clone-the-repository)
-    - [Step 2: Understanding Build Modes](#step-2-understanding-build-modes)
-    - [Step 3: Configure Build Mode](#step-3-configure-build-mode)
-      - [For Development/Testing](#for-developmenttesting)
-      - [For Library Distribution](#for-library-distribution)
-    - [Step 4: Build the Project](#step-4-build-the-project)
-      - [Option A: Using the Provided Script (Linux/Mac)](#option-a-using-the-provided-script-linuxmac)
-      - [Option B: Manual Build (Linux/Mac/Windows)](#option-b-manual-build-linuxmacwindows)
-      - [Windows-Specific Build Instructions](#windows-specific-build-instructions)
-    - [Step 5: Run the Project](#step-5-run-the-project)
-      - [Development Mode (SOCKET_LOCAL_TEST=1)](#development-mode-socket_local_test1)
-      - [Library Mode (SOCKET_LOCAL_TEST≠1)](#library-mode-socket_local_test1)
-    - [Project Structure After Build](#project-structure-after-build)
-    - [Using the Library in Your Own Project](#using-the-library-in-your-own-project)
+  - [Step 1: Clone the Repository](#step-1-clone-the-repository)
+  - [Step 2: Understanding Build Modes](#step-2-understanding-build-modes)
+  - [Step 3: Configure Build Mode](#step-3-configure-build-mode)
+    - [For Development/Testing](#for-developmenttesting)
+    - [For Library Distribution](#for-library-distribution)
+  - [Step 4: Build the Project](#step-4-build-the-project)
+    - [Option A: Using the Provided Script (Linux/Mac)](#option-a-using-the-provided-script-linuxmac)
+    - [Option B: Manual Build (Linux/Mac/Windows)](#option-b-manual-build-linuxmacwindows)
+    - [Windows-Specific Build Instructions](#windows-specific-build-instructions)
+  - [Step 5: Run the Project](#step-5-run-the-project)
+    - [Development Mode (SOCKET_LOCAL_TEST=1)](#development-mode-socket_local_test1)
+    - [Library Mode (SOCKET_LOCAL_TEST≠1)](#library-mode-socket_local_test1)
+  - [Project Structure After Build](#project-structure-after-build)
+  - [Using the Library in Your Own Project](#using-the-library-in-your-own-project)
 
 - [API Documentation](#api-documentation)
 
@@ -145,18 +149,10 @@ auto conn = server_socket.accept();
 conn->send(response_data);
 ```
 
-## Building The Project
-
 ### Prerequisites
 
 - CMake 3.10 or higher
 - C++17 compatible compiler (GCC 7+, Clang 5+, MSVC 2017+)
-
-### How to build
-
-This guide will walk you through cloning, building, and running the project on both Linux and Windows systems.
-
-Before you start, ensure you have the following installed:
 
 #### For Linux (Ubuntu/Debian):
 
@@ -193,6 +189,112 @@ sudo dnf install cmake git
    - **Visual Studio 2019/2022** (recommended): Download from [visualstudio.microsoft.com](https://visualstudio.microsoft.com/)
    - **MinGW-w64**: Download from [mingw-w64.org](https://www.mingw-w64.org/)
    - **MSYS2**: Download from [msys2.org](https://www.msys2.org/)
+
+## Quick Start
+
+### Using Git Submodules
+
+You just need to clone the repository as a submodule:
+
+```bash
+# In your base project directory, run the following command
+git submodule add https://github.com/HamzaHassanain/hamza-socket-lib.git ./submodules/socket-lib
+```
+
+Then in your project's CMakeLists.txt, include the submodule:
+
+```cmake
+# Your project's CMakeLists.txt
+cmake_minimum_required(VERSION 3.10)
+project(my_project)
+
+# This block checks for Git and initializes submodules recursively
+
+if(GIT_FOUND AND EXISTS "${PROJECT_SOURCE_DIR}/.git")
+
+    # Update submodules as needed
+    option(GIT_SUBMODULE "Check submodules during build" ON)
+    option(GIT_SUBMODULE_UPDATE_LATEST "Update submodules to latest remote commits" ON)
+
+
+    if(GIT_SUBMODULE)
+        message(STATUS "Initializing and updating submodules...")
+
+        # First, initialize submodules if they don't exist
+        execute_process(COMMAND ${GIT_EXECUTABLE} submodule update --init --recursive
+                        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+                        RESULT_VARIABLE GIT_SUBMOD_INIT_RESULT)
+        if(NOT GIT_SUBMOD_INIT_RESULT EQUAL "0")
+            message(FATAL_ERROR "git submodule update --init --recursive failed with ${GIT_SUBMOD_INIT_RESULT}, please checkout submodules")
+        endif()
+
+        # If enabled, update submodules to latest remote commits
+        if(GIT_SUBMODULE_UPDATE_LATEST)
+            message(STATUS "Updating submodules to latest remote commits...")
+            execute_process(COMMAND ${GIT_EXECUTABLE} submodule update --remote --recursive
+                            WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+                            RESULT_VARIABLE GIT_SUBMOD_UPDATE_RESULT)
+            if(NOT GIT_SUBMOD_UPDATE_RESULT EQUAL "0")
+                message(WARNING "git submodule update --remote --recursive failed with ${GIT_SUBMOD_UPDATE_RESULT}, continuing with current submodule versions")
+            else()
+                message(STATUS "Submodules updated to latest versions successfully")
+            endif()
+        endif()
+    endif()
+endif()
+
+
+# Add the submodule
+add_subdirectory(submodules/socket-lib)
+
+# Link against the library
+target_link_libraries(my_project PRIVATE socket_lib)
+```
+
+Then in your cpp file, include the socket library header:
+
+```cpp
+#include "submodules/socket-lib/socket-lib.hpp"
+```
+
+#### Example Simple UDP Server
+
+```cpp
+#include "submodules/socket-lib/socket-lib.hpp"
+#include <iostream>
+
+int main() {
+    try {
+        // Create server address and bind UDP socket
+        hamza_socket::socket_address server_addr(hamza_socket::port(8080));
+        hamza_socket::socket udp_server(server_addr, hamza_socket::Protocol::UDP);
+
+        std::cout << "UDP Server listening on port 8080..." << std::endl;
+
+        while (true) {
+            // Receive from any client
+            hamza_socket::socket_address client_addr;
+            auto data = udp_server.receive(client_addr);
+
+            std::cout << "Received from " << client_addr.to_string()
+                      << ": " << data.to_string() << std::endl;
+
+            // Echo back to sender
+            hamza_socket::data_buffer response("Echo: " + data.to_string());
+            udp_server.send_to(client_addr, response);
+        }
+    } catch (const std::exception &e) {
+        std::cerr << "UDP Server error: " << e.what() << std::endl;
+    }
+}
+
+```
+
+## Building The Project
+
+This guide will walk you through cloning, building, and running the project on both Linux and Windows systems.
+
+Before you start, ensure you have the following installed:
 
 ### Step 1: Clone the Repository
 
@@ -233,21 +335,8 @@ Create a `.env` file in the project root:
 #### For Development/Testing
 
 ```bash
-# Create .env file for development mode
-echo "SOCKET_LOCAL_TEST=1" > .env
-
-# On Windows (PowerShell):
-echo "SOCKET_LOCAL_TEST=1" | Out-File -FilePath .env -Encoding ASCII
-
-# On Windows (CMD):
-echo SOCKET_LOCAL_TEST=1 > .env
-```
-
-#### For Library Distribution:
-
-```bash
-# Create .env file for library mode (or leave empty)
-echo "SOCKET_LOCAL_TEST=0" > .env
+# In .env file, =1 for development mode, and =0 for library mode
+SOCKET_LOCAL_TEST=1
 ```
 
 ### Step 4: Build the Project
@@ -273,18 +362,18 @@ This script automatically:
 
 ```bash
 # Create build directory
-mkdir build
-cd build
+mkdir -p build
 
 # Configure with CMake
-cmake ..
+cmake -S . -B build
 
 # Build the project
-cmake --build .
+cd build
+make -j$(nproc)
 
-# Alternative: use make on Linux/Mac
-make -j$(nproc)  # Linux
-make -j$(sysctl -n hw.ncpu)  # Mac
+# Back to project root
+cd ..
+
 ```
 
 #### Windows-Specific Build Instructions
@@ -329,26 +418,11 @@ The build will create a static library file:
 - **Linux/Mac**: `build/libsocket_lib.a`
 - **Windows**: `build/socket_lib.lib` or `build/Debug/socket_lib.lib`
 
-### Project Structure After Build
-
-```
-hamza-http-server-lib/
-├── build/                     # Build artifacts
-│   ├── socket_lib           # Executable (Linux, development mode)
-│   ├── socket_lib.exe       # Executable (Windows, development mode)
-│   ├── libsocket_lib.a      # Static library (Linux, library mode)
-│   └── socket_lib.lib       # Static library (Windows, library mode)
-├── src/                      # Source files
-├── includes/                 # Header files
-├── app.cpp                   # Example application (Ignored if SOCKET_LOCAL_TEST=0 or not found at all)
-├── CMakeLists.txt           # Build configuration
-├── .env                     # Build mode configuration
-└── build.sh                   # Build script (Linux/Mac)
-```
-
 ### Using the Library in Your Own Project
 
-Once built in library mode, you can use it in other projects:
+You acctualy have 3 ways to use this library in your own project, one is disccused above, two we will cover here.
+
+#### One Way
 
 ```cmake
 # Your project's CMakeLists.txt
@@ -361,9 +435,9 @@ find_library(HAMZA_SOCKET_LIB
     PATHS /path/to/hamza-socket-lib/build
 )
 
-target_include_directories(my_app PRIVATE /path/to/hamza-socket-lib/)
-# include "socket-lib.hpp" in your cpp file for the full library
-# or use the includes directory directly
+# include "path-to-hamza-socket-lib/socket-lib.hpp" in your cpp file for the full library
+# or un-comment the bellow line
+# target_include_directories(my_app PRIVATE /path/to/hamza-socket-lib/includes)
 
 # Link against the library
 add_executable(my_app main.cpp)
