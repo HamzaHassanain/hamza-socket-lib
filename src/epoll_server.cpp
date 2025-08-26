@@ -421,7 +421,6 @@ namespace hh_socket
         if (c != conns.end())
         {
             c->second.want_close = true;
-            mod_epoll(conn->get_fd(), EPOLLOUT);
         }
     }
 
