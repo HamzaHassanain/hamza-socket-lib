@@ -34,6 +34,7 @@
 #include <sys/epoll.h>
 #include <sys/resource.h>
 #include <signal.h>
+#include <chrono>
 
 #include "tcp_server.hpp"
 #include "socket.hpp"
@@ -221,7 +222,12 @@ namespace hh_socket
          * @note Overrides tcp_server::close_connection
          */
         void close_connection(std::shared_ptr<connection> conn) override;
-
+        /**
+         * @brief Closes a connection identified by its file descriptor
+         *
+         * @param fd File descriptor of the connection to close
+         */
+        void close_connection(int fd);
         /**
          * @brief Interface for derived classes to send messages
          * @param conn Shared pointer to the target connection

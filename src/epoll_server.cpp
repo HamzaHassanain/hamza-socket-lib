@@ -86,6 +86,7 @@ namespace hh_socket
                                                             socket_address(client_addr));
                 current_open_connections++;
                 conns.emplace(cfd, epoll_connection{connptr, {}, false});
+
                 on_connection_opened(connptr);
             }
             catch (const std::exception &e)
@@ -108,13 +109,7 @@ namespace hh_socket
                 ssize_t m = ::recv(fd, buf, sizeof(buf), 0);
                 if (m > 0)
                 {
-                    auto db = data_buffer(buf, m);
-
-                    // Data received, notify application
-                    if (db.size() != m)
-                        on_message_received(c.conn, data_buffer("BAD_DATA MAY_BE NULL_TERMINATED\r\n"));
-                    else
-                        on_message_received(c.conn, db);
+                    on_message_received(c.conn, data_buffer(buf, m));
                 }
                 else if (m == 0)
                 {
@@ -414,6 +409,15 @@ namespace hh_socket
     {
         auto c = conns.find(conn->get_fd());
         int fd = conn->get_fd();
+        if (c == conns.end())
+            return; // Connection already closed
+        conns[fd].want_close = true;
+        mod_epoll(fd, HAMZA_CUSTOM_CLOSE_EVENT);
+    }
+
+    void epoll_server::close_connection(int fd)
+    {
+        auto c = conns.find(fd);
         if (c == conns.end())
             return; // Connection already closed
         conns[fd].want_close = true;
