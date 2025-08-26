@@ -222,12 +222,21 @@ namespace hh_socket
          * @note Overrides tcp_server::close_connection
          */
         void close_connection(std::shared_ptr<connection> conn) override;
+
+        /**
+         * @brief Stops reading from a connection (disables EPOLLIN)
+         * @note it just sets want to stop to be true
+         * @param conn Shared pointer to the connection to stop reading from
+         */
+        void stop_reading_from_connection(std::shared_ptr<connection> conn);
+
         /**
          * @brief Closes a connection identified by its file descriptor
          *
          * @param fd File descriptor of the connection to close
          */
         void close_connection(int fd);
+
         /**
          * @brief Interface for derived classes to send messages
          * @param conn Shared pointer to the target connection

@@ -415,6 +415,16 @@ namespace hh_socket
         mod_epoll(fd, HAMZA_CUSTOM_CLOSE_EVENT);
     }
 
+    void epoll_server::stop_reading_from_connection(std::shared_ptr<connection> conn)
+    {
+        auto c = conns.find(conn->get_fd());
+        if (c != conns.end())
+        {
+            c->second.want_close = true;
+            mod_epoll(conn->get_fd(), EPOLLOUT);
+        }
+    }
+
     void epoll_server::close_connection(int fd)
     {
         auto c = conns.find(fd);
