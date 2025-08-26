@@ -347,8 +347,13 @@ namespace hh_socket
                                 ssize_t m = ::recv(fd, buf, sizeof(buf), 0);
                                 if (m > 0)
                                 {
+                                    auto db = data_buffer(buf, m);
+
                                     // Data received, notify application
-                                    on_message_received(c.conn, data_buffer(buf, m));
+                                    if (db.size() != m)
+                                        on_message_received(c.conn, data_buffer("BAD_DATA MAY_BE NULL_TERMINATED\r\n"));
+                                    else
+                                        on_message_received(c.conn, db);
                                 }
                                 else if (m == 0)
                                 {
