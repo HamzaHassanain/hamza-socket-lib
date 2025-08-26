@@ -417,10 +417,6 @@ The build will create a static library file:
 
 ### Using the Library in Your Own Project
 
-You acctualy have 3 ways to use this library in your own project, one is disccused above, two we will cover here.
-
-#### One Way
-
 ```cmake
 # Your project's CMakeLists.txt
 cmake_minimum_required(VERSION 3.10)
