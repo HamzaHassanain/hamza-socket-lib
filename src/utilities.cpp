@@ -453,9 +453,9 @@ namespace hh_socket
 
             return sock_ptr;
         }
-        catch (const socket_exception &e)
+        catch (socket_exception &e)
         {
-            return nullptr;
+            throw std::runtime_error("Failed to create listener socket: " + e.what());
         }
     }
 }

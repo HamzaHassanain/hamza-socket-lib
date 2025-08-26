@@ -95,6 +95,49 @@ namespace hh_socket
             }
         }
     }
+
+    void epoll_server::try_read(epoll_connection &c)
+    {
+        try
+        {
+            char buf[64 * 1024]; // 64KB buffer for high throughput
+            int fd = c.conn->get_fd();
+            // Read as much data as possible (edge-triggered)
+            while (!c.want_close)
+            {
+                ssize_t m = ::recv(fd, buf, sizeof(buf), 0);
+                if (m > 0)
+                {
+                    auto db = data_buffer(buf, m);
+
+                    // Data received, notify application
+                    if (db.size() != m)
+                        on_message_received(c.conn, data_buffer("BAD_DATA MAY_BE NULL_TERMINATED\r\n"));
+                    else
+                        on_message_received(c.conn, db);
+                }
+                else if (m == 0)
+                {
+                    // Peer closed connection gracefully
+                    close_conn(fd);
+                    return;
+                }
+                else
+                {
+                    // Error or would block
+                    if (errno == EAGAIN || errno == EWOULDBLOCK)
+                        break; // No more data available
+                    // Connection error, close it
+                    close_conn(fd);
+                    return;
+                }
+            }
+        }
+        catch (const std::exception &e)
+        {
+            on_exception_occurred(e);
+        }
+    }
     /**
      * Implementation Details:
      * - Uses setrlimit() system call with RLIMIT_NOFILE
@@ -337,45 +380,7 @@ namespace hh_socket
                     // Handle incoming data (EPOLLIN)
                     if (ev & EPOLLIN)
                     {
-                        try
-                        {
-                            char buf[64 * 1024]; // 64KB buffer for high throughput
-
-                            // Read as much data as possible (edge-triggered)
-                            while (true)
-                            {
-                                ssize_t m = ::recv(fd, buf, sizeof(buf), 0);
-                                if (m > 0)
-                                {
-                                    auto db = data_buffer(buf, m);
-
-                                    // Data received, notify application
-                                    if (db.size() != m)
-                                        on_message_received(c.conn, data_buffer("BAD_DATA MAY_BE NULL_TERMINATED\r\n"));
-                                    else
-                                        on_message_received(c.conn, db);
-                                }
-                                else if (m == 0)
-                                {
-                                    // Peer closed connection gracefully
-                                    close_conn(fd);
-                                    goto next_event;
-                                }
-                                else
-                                {
-                                    // Error or would block
-                                    if (errno == EAGAIN || errno == EWOULDBLOCK)
-                                        break; // No more data available
-                                    // Connection error, close it
-                                    close_conn(fd);
-                                    goto next_event;
-                                }
-                            }
-                        }
-                        catch (const std::exception &e)
-                        {
-                            on_exception_occurred(e);
-                        }
+                        try_read(c);
                     }
 
                 next_event:
@@ -411,6 +416,7 @@ namespace hh_socket
         int fd = conn->get_fd();
         if (c == conns.end())
             return; // Connection already closed
+        conns[fd].want_close = true;
         mod_epoll(fd, HAMZA_CUSTOM_CLOSE_EVENT);
     }
 
@@ -489,17 +495,15 @@ namespace hh_socket
      */
     void epoll_server::on_message_received(std::shared_ptr<connection> conn, const data_buffer &db)
     {
-        std::thread([&, conn, db]()
-                    {
-                        std::cout
-                            << "Message Received from " << conn->get_fd() << ": " << db.to_string() << std::endl;
-                        std::string message = "Echo " + db.to_string();
 
-                        if (db.to_string() == "close\n")
-                            close_connection(conn);
-                        else
-                            send_message(conn, data_buffer(message)); })
-            .detach();
+        std::cout
+            << "Message Received from " << conn->get_fd() << ": " << db.to_string() << std::endl;
+        std::string message = "Echo " + db.to_string();
+
+        if (db.to_string() == "close\n")
+            close_connection(conn);
+        else
+            send_message(conn, data_buffer(message));
     }
 
     /**

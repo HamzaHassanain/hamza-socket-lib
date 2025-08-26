@@ -62,6 +62,9 @@ namespace hh_socket
 
         /// Flag indicating if the connection wants to write (EPOLLOUT enabled)
         bool want_write = false;
+
+        /// Flag indicating if the connection wants to close, meant to be set by user
+        bool want_close = false;
     };
 
     /**
@@ -120,6 +123,10 @@ namespace hh_socket
 
         /// @brief  tries to accept connections
         void try_accept();
+
+        /// @brief  Tries to read data from a connection
+        /// @param c Reference to the epoll_connection to read from
+        void try_read(epoll_connection &c);
 
         /**
          * @brief Sets file descriptor limit for the process
