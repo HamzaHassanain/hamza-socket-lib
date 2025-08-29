@@ -151,10 +151,10 @@ namespace hh_socket
         {
             throw socket_exception("Accept is only supported for TCP sockets", "ProtocolMismatch", __func__);
         }
-		if (fd.get() == SOCKET_ERROR_VALUE)
-		{
-			throw socket_exception("Socket is not open", "SocketAcceptance", __func__);
-		}
+        if (fd.get() == SOCKET_ERROR_VALUE)
+        {
+            throw socket_exception("Socket is not open", "SocketAcceptance", __func__);
+        }
         sockaddr_storage client_addr;
         socklen_t client_addr_len = sizeof(client_addr);
 
@@ -162,11 +162,13 @@ namespace hh_socket
         // Returns new socket descriptor for the connection, -1 on error
         // Fills client_addr with client's address information
         socket_t client_fd;
-        if (!NON_BLOCKING) {
+        if (!NON_BLOCKING)
+        {
 
-            client_fd = ::accept(fd.get(), reinterpret_cast<sockaddr *>(&client_addr), &client_addr_len);  
-            if (client_fd == INVALID_SOCKET) {  
-               throw socket_exception("Failed to accept connection: " + std::string(get_error_message()), "SocketAcceptance", __func__);  
+            client_fd = ::accept(fd.get(), reinterpret_cast<sockaddr *>(&client_addr), &client_addr_len);
+            if (client_fd == INVALID_SOCKET_VALUE)
+            {
+                throw socket_exception("Failed to accept connection: " + std::string(get_error_message()), "SocketAcceptance", __func__);
             }
         }
         else
