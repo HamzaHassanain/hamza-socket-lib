@@ -21,8 +21,6 @@
 
 // check if we are on linux and platform that supports epoll
 
-
-
 #include <errno.h>
 #include <fcntl.h>
 #include <string.h>
@@ -78,19 +76,19 @@ namespace hh_socket
                     break;     // Max File Descriptors reached, no need to raise exception
                 }
 #else
-				// Fallback windows implementation
+                // Fallback windows implementation
 
-				// Fallback Unix implementation
-				int cfd = ::accept(listener_socket->get_fd(),
-					reinterpret_cast<sockaddr*>(&client_addr),
-					&client_addr_len);
-				if (cfd < 0)
-				{
-					if (errno == EAGAIN || errno == EWOULDBLOCK)
-						break; // No more connections to accept
-					break;     // Max File Descriptors reached, no need to raise exception
-				}
-				// Set non-blocking and close-on-exec flags
+                // Fallback Unix implementation
+                int cfd = ::accept(listener_socket->get_fd(),
+                                   reinterpret_cast<sockaddr *>(&client_addr),
+                                   &client_addr_len);
+                if (cfd < 0)
+                {
+                    if (errno == EAGAIN || errno == EWOULDBLOCK)
+                        break; // No more connections to accept
+                    break;     // Max File Descriptors reached, no need to raise exception
+                }
+                // Set non-blocking and close-on-exec flags
                 u_long mode = 1;
                 if (ioctlsocket(cfd, FIONBIO, &mode) != 0)
                 {
@@ -130,22 +128,24 @@ namespace hh_socket
     {
         try
         {
-            //char buf[64 * 1024]; // 64KB buffer for high throughput
-			char* buf = new char[64 * 1024];
-			std::size_t sz = 64 * 1024;
+            // char buf[64 * 1024]; // 64KB buffer for high throughput
+            char *buf = new char[64 * 1024];
+            std::size_t sz = 64 * 1024;
             int fd = c.conn->get_fd();
             // Read as much data as possible (edge-triggered)
             while (!c.want_close)
             {
-                std::size_t m = ::recv(fd, buf,sz, 0);
+                std::size_t m = ::recv(fd, buf, sz, 0);
                 if (m > 0)
                 {
                     on_message_received(c.conn, data_buffer(buf, m));
+                    delete[] buf;
                 }
                 else if (m == 0)
                 {
                     // Peer closed connection gracefully
                     close_conn(fd);
+                    delete[] buf;
                     return;
                 }
                 else
@@ -155,6 +155,7 @@ namespace hh_socket
                         break; // No more data available
                     // Connection error, close it
                     close_conn(fd);
+                    delete[] buf;
                     return;
                 }
             }
@@ -231,7 +232,7 @@ namespace hh_socket
         current_open_connections--;
         del_epoll(fd);
         on_connection_closed(conns[fd].conn);
-		close_socket(fd);
+        close_socket(fd);
         conns.erase(fd);
     }
 
@@ -605,14 +606,14 @@ namespace hh_socket
             std::cerr << "Failed to create epoll instance: " << strerror(errno) << std::endl;
             throw std::runtime_error("Failed to create epoll instance");
         }
-#else 
-		events = std::vector<epoll_event>(4096);
-		epoll_fd = epoll_create1(0);
-		if (epoll_fd == INVALID_HANDLE_VALUE)
-		{
-			std::cerr << "Failed to create epoll instance: " << strerror(errno) << std::endl;
-			throw std::runtime_error("Failed to create epoll instance");
-		}
+#else
+        events = std::vector<epoll_event>(4096);
+        epoll_fd = epoll_create1(0);
+        if (epoll_fd == INVALID_HANDLE_VALUE)
+        {
+            std::cerr << "Failed to create epoll instance: " << strerror(errno) << std::endl;
+            throw std::runtime_error("Failed to create epoll instance");
+        }
 #endif
     }
 
@@ -673,7 +674,7 @@ namespace hh_socket
         if (listener_socket)
             close_socket(listener_socket->get_fd());
 #if defined(_WIN32) || defined(_WIN64) || defined(__CYGWIN__)
-		// hell nothing;
+        // hell nothing;
 #else
         if (epoll_fd != -1)
             close_socket(epoll_fd);
@@ -681,4 +682,4 @@ namespace hh_socket
     }
 }
 
-//#endif
+// #endif
