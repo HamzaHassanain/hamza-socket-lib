@@ -3,7 +3,6 @@
 #include <string>
 #include <chrono>
 #include <cstring> // For strerror
-#include <sys/socket.h>
 #include <memory>
 // Platform detection and common socket types
 #if defined(_WIN32) || defined(_WIN64) || defined(__CYGWIN__)

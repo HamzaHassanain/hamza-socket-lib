@@ -1,5 +1,14 @@
 #pragma once
 
+/**
+ * @file tcp_server.hpp
+ * @brief The file for the abstract tcp_server class.
+
+ *@note This class defines the interface for a TCP server.
+ * @copyright Copyright (c) 2025
+ *
+ */
+
 #include "socket.hpp"
 #include "connection.hpp"
 

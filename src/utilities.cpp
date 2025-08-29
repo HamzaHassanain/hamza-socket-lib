@@ -4,7 +4,7 @@
 #include <mutex>
 #include <cstring>
 // Platform-specific includes
-#if defined(SOCKET_PLATFORM_WINDOWS)
+#if defined(_WIN32) || defined(_WIN64) || defined(__CYGWIN__)
 #include <winsock2.h>
 #include <ws2tcpip.h>
 #pragma comment(lib, "ws2_32.lib") // Link Windows socket library
@@ -161,22 +161,22 @@ namespace hh_socket
     {
 #if defined(SOCKET_PLATFORM_WINDOWS)
         // Windows implementation using InetPtonA() function
-        if (family_ip.get_family_id() == AF_INET)
+        if (family_ip == family(IPV4))
         {
             // Convert IPv4 address string to binary format
             IN_ADDR in_addr;
-            if (InetPtonA(AF_INET, address.get_ip_address().c_str(), &in_addr) == 1)
+            if (InetPtonA(AF_INET, address.get().c_str(), &in_addr) == 1)
             {
                 // Copy converted address to output buffer
                 *(reinterpret_cast<IN_ADDR *>(addr)) = in_addr;
             }
             // Note: No error handling for conversion failure
         }
-        else if (family_ip.get_family_id() == AF_INET6)
+        else if (family_ip == family(IPV6))
         {
             // Convert IPv6 address string to binary format
             IN6_ADDR in6_addr;
-            if (InetPtonA(AF_INET6, address.get_ip_address().c_str(), &in6_addr) == 1)
+            if (InetPtonA(AF_INET6, address.get().c_str(), &in6_addr) == 1)
             {
                 // Copy converted address to output buffer
                 *(reinterpret_cast<IN6_ADDR *>(addr)) = in6_addr;
@@ -260,7 +260,7 @@ namespace hh_socket
      */
     bool initialize_socket_library()
     {
-#if defined(SOCKET_PLATFORM_WINDOWS)
+#if defined(_WIN32) || defined(_WIN64) || defined(__CYGWIN__)
         // Windows Winsock initialization
         WSADATA wsaData;
 

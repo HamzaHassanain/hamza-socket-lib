@@ -55,7 +55,9 @@ load_env_file(${CMAKE_SOURCE_DIR}/.env)
 
 
 if(SOCKET_LOCAL_TEST AND SOCKET_LOCAL_TEST STREQUAL "1")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -pedantic -fsanitize=address -g -O0")
+    # set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -pedantic -fsanitize=address -g -O0")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
+
 else()
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
 endif()
@@ -65,7 +67,7 @@ endif()
 
 
 if(SOCKET_LOCAL_TEST AND SOCKET_LOCAL_TEST STREQUAL "1")
-    add_executable(  socket_lib app.cpp ${SRC_FILES}   )
+    add_executable(  socket_lib app.cpp ${SRC_FILES}  )
 else()
     add_library(socket_lib STATIC ${SRC_FILES})
 endif()

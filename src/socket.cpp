@@ -6,7 +6,7 @@
 #if defined(_WIN32) || defined(_WIN64) || defined(__CYGWIN__)
 #include <winsock2.h>
 #include <ws2tcpip.h>
-#include <mstcpip.h>
+// #include <mstcpip.h>
 #pragma comment(lib, "ws2_32.lib")
 // Windows doesn't have errno for socket operations, use WSAGetLastError()
 #define socket_errno() WSAGetLastError()
@@ -151,7 +151,10 @@ namespace hh_socket
         {
             throw socket_exception("Accept is only supported for TCP sockets", "ProtocolMismatch", __func__);
         }
-
+		if (fd.get() == SOCKET_ERROR_VALUE)
+		{
+			throw socket_exception("Socket is not open", "SocketAcceptance", __func__);
+		}
         sockaddr_storage client_addr;
         socklen_t client_addr_len = sizeof(client_addr);
 
@@ -159,8 +162,13 @@ namespace hh_socket
         // Returns new socket descriptor for the connection, -1 on error
         // Fills client_addr with client's address information
         socket_t client_fd;
-        if (!NON_BLOCKING)
-            client_fd = ::accept(fd.get(), reinterpret_cast<sockaddr *>(&client_addr), &client_addr_len);
+        if (!NON_BLOCKING) {
+
+            client_fd = ::accept(fd.get(), reinterpret_cast<sockaddr *>(&client_addr), &client_addr_len);  
+            if (client_fd == INVALID_SOCKET) {  
+               throw socket_exception("Failed to accept connection: " + std::string(get_error_message()), "SocketAcceptance", __func__);  
+            }
+        }
         else
         {
 #if defined(_WIN32) || defined(_WIN64) || defined(__CYGWIN__)
@@ -181,7 +189,12 @@ namespace hh_socket
             client_fd = ::accept4(fd.get(), reinterpret_cast<sockaddr *>(&client_addr), &client_addr_len, SOCK_NONBLOCK | SOCK_CLOEXEC);
 #endif
         }
+#if defined(_WIN32) || defined(_WIN64) || defined(__CYGWIN__)
+        int error = WSAGetLastError();
+        if (error == WSAEWOULDBLOCK)
+#else
         if (errno == EAGAIN || errno == EWOULDBLOCK)
+#endif
         {
             // no connection to accept
             return std::shared_ptr<connection>(nullptr);
@@ -219,8 +232,8 @@ namespace hh_socket
         // ::recvfrom(sockfd, buf, len, flags, src_addr, addrlen) - receive datagram
         // Returns number of bytes received, -1 on error
         // Fills sender_addr with sender's address information
-        ssize_t bytes_received = ::recvfrom(fd.get(), buffer, sizeof(buffer), 0,
-                                            reinterpret_cast<sockaddr *>(&sender_addr), &sender_addr_len);
+        std::size_t bytes_received = ::recvfrom(fd.get(), buffer, sizeof(buffer), 0,
+                                                reinterpret_cast<sockaddr *>(&sender_addr), &sender_addr_len);
 
         if (bytes_received == SOCKET_ERROR_VALUE)
         {
@@ -248,8 +261,8 @@ namespace hh_socket
 
         // ::sendto(sockfd, buf, len, flags, dest_addr, addrlen) - send datagram
         // Returns number of bytes sent, -1 on error
-        ssize_t bytes_sent = ::sendto(fd.get(), data.data(), data.size(), 0,
-                                      addr.get_sock_addr(), addr.get_sock_addr_len());
+        std::size_t bytes_sent = ::sendto(fd.get(), data.data(), data.size(), 0,
+                                          addr.get_sock_addr(), addr.get_sock_addr_len());
 
         if (bytes_sent == SOCKET_ERROR_VALUE)
         {
@@ -292,6 +305,23 @@ namespace hh_socket
     {
         try
         {
+#if defined(_WIN32) || defined(_WIN64) || defined(__CYGWIN__)
+            HANDLE handle = reinterpret_cast<HANDLE>(this->fd.get());
+            DWORD flags = 0;
+
+            if (GetHandleInformation(handle, &flags))
+            {
+                if (enable)
+                    SetHandleInformation(handle, HANDLE_FLAG_INHERIT, 0); // Disable inheritance
+                else
+                    SetHandleInformation(handle, HANDLE_FLAG_INHERIT, HANDLE_FLAG_INHERIT); // Enable inheritance
+            }
+            else
+            {
+                throw std::runtime_error("Failed to get handle information");
+            }
+#else
+
             int flags = fcntl(this->fd.get(), F_GETFD);
             if (flags != -1)
             {
@@ -300,6 +330,7 @@ namespace hh_socket
                 else
                     fcntl(this->fd.get(), F_SETFD, flags & ~FD_CLOEXEC);
             }
+#endif
         }
         catch (const std::exception &e)
         {
@@ -322,7 +353,9 @@ namespace hh_socket
         // SOL_SOCKET: socket level options
         // SO_REUSEADDR: allow reuse of local addresses
         // Returns 0 on success, -1 on error
-        if (setsockopt(fd.get(), SOL_SOCKET, SO_REUSEADDR, &optval, sizeof(optval)) == SOCKET_ERROR_VALUE)
+
+        const char *optval_ptr = reinterpret_cast<const char *>(&optval);
+        if (setsockopt(fd.get(), SOL_SOCKET, SO_REUSEADDR, optval_ptr, sizeof(optval)) == SOCKET_ERROR_VALUE)
         {
             throw socket_exception("Failed to set SO_REUSEADDR option: " + std::string(get_error_message()), "SocketOption", __func__);
         }
@@ -377,7 +410,8 @@ namespace hh_socket
 
         // setsockopt(sockfd, level, optname, optval, optlen) - set socket option
         // Returns 0 on success, -1 on error
-        if (setsockopt(fd.get(), level, optname, &optval, sizeof(optval)) == SOCKET_ERROR_VALUE)
+        const char *optval_ptr = reinterpret_cast<const char *>(&optval);
+        if (setsockopt(fd.get(), level, optname, optval_ptr, sizeof(optval)) == SOCKET_ERROR_VALUE)
         {
             throw socket_exception("Failed to set socket option: " + std::string(get_error_message()), "SocketOption", __func__);
         }

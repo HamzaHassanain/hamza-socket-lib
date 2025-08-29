@@ -23,18 +23,24 @@
  * @note This implementation is Linux-specific and will not compile on other platforms
  */
 
-// check if we are on linux and platform that supports epoll
-#if (defined(__linux__) || defined(__linux))
+
 
 #include <deque>
 #include <memory>
 #include <string>
 #include <unordered_map>
 #include <vector>
+#include <chrono>
+
+#include <signal.h>
+ // check if we are on linux and platform that supports epoll
+#if (defined(__linux__) || defined(__linux))
 #include <sys/epoll.h>
 #include <sys/resource.h>
-#include <signal.h>
-#include <chrono>
+#else
+#include "wepoll.hpp"
+#endif
+
 
 #include "tcp_server.hpp"
 #include "socket.hpp"
@@ -42,7 +48,7 @@
 #include "data_buffer.hpp"
 
 /// Custom epoll event used to signal connection closure
-const u_int32_t HAMZA_CUSTOM_CLOSE_EVENT = 3545940;
+const unsigned int HAMZA_CUSTOM_CLOSE_EVENT = 3545940;
 
 namespace hh_socket
 {
@@ -101,8 +107,12 @@ namespace hh_socket
     class epoll_server : public tcp_server
     {
     private:
+#if defined(_WIN32) || defined(_WIN64) || defined(__CYGWIN__)
+		HANDLE epoll_fd = INVALID_HANDLE_VALUE;
+#else
         /// Epoll file descriptor for event monitoring
         int epoll_fd = -1;
+#endif
 
         /// Shared pointer to the listening socket
         std::shared_ptr<socket> listener_socket;
@@ -117,10 +127,10 @@ namespace hh_socket
         volatile sig_atomic_t g_stop = 0;
 
         /// Current number of open connections
-        ssize_t current_open_connections = 10;
+        std::size_t current_open_connections = 10;
 
         /// Maximum number of file descriptors, if failed setting to the specified max
-        ssize_t max_fds = 1024;
+        std::size_t max_fds = 1024;
 
         /// @brief  tries to accept connections
         void try_accept();
@@ -129,6 +139,7 @@ namespace hh_socket
         /// @param c Reference to the epoll_connection to read from
         void try_read(epoll_connection &c);
 
+#if (defined(__linux__) || defined(__linux))
         /**
          * @brief Sets file descriptor limit for the process
          * @param soft Soft limit for file descriptors
@@ -139,7 +150,7 @@ namespace hh_socket
          * Essential for servers handling many concurrent connections.
          */
         int set_rlimit_nofile(rlim_t soft, rlim_t hard);
-
+#endif
         /**
          * @brief Adds file descriptor to epoll monitoring
          * @param fd File descriptor to monitor
@@ -414,4 +425,3 @@ namespace hh_socket
     };
 }
 
-#endif

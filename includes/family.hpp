@@ -2,7 +2,6 @@
 
 #include <string>
 #include <ostream>
-#include <sys/socket.h>
 #include <vector>
 #include <algorithm>
 #include "exceptions.hpp"

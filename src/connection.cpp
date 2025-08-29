@@ -18,7 +18,7 @@ namespace hh_socket
      * TCP may send data in multiple chunks, so loop until all data sent.
      * Tracks total bytes sent to detect partial transmission issues.
      */
-    ssize_t connection::send(const data_buffer &data)
+    std::size_t connection::send(const data_buffer &data)
     {
         if (!is_open || fd.get() == SOCKET_ERROR_VALUE || fd.get() == INVALID_SOCKET_VALUE)
         {
@@ -71,7 +71,7 @@ EINTR: The function call was interrupted by a signal.
                 return data_buffer();
             }
 #elif defined(SOCKET_PLATFORM_WINDOWS)
-            if (WSAGetLastError() == WSAEWOULDBLOCK || WSAGetLastError() == WSAEAGAIN || WSAGetLastError() == WSAEINTR)
+            if (WSAGetLastError() == WSAEWOULDBLOCK || WSAGetLastError() == WSAEINTR)
             {
                 return data_buffer();
             }

@@ -87,7 +87,7 @@ namespace hh_socket
          * @throws socket_exception with type "PartialWrite" if not all data was sent
          * @return Number of sent bytes
          */
-        ssize_t send(const data_buffer &data);
+        std::size_t send(const data_buffer &data);
 
         /**
          * @brief Receive data from established connection

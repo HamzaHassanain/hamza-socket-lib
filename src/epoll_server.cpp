@@ -20,18 +20,26 @@
  */
 
 // check if we are on linux and platform that supports epoll
-#if defined(__linux__) || defined(__linux)
 
-#include <arpa/inet.h>
+
+
 #include <errno.h>
 #include <fcntl.h>
+#include <string.h>
+
+#if defined(__linux__) || defined(__linux)
+#include <arpa/inet.h>
 #include <netinet/in.h>
 #include <netinet/tcp.h>
-#include <string.h>
 #include <sys/epoll.h>
 #include <sys/resource.h>
 #include <sys/socket.h>
 #include <unistd.h>
+#else
+#define EPOLLET 0
+#define EPOLLEXCLUSIVE 0
+#define EPOLLWAKEUP 0
+#endif
 
 #include <cstdlib>
 #include <iostream>
@@ -57,6 +65,7 @@ namespace hh_socket
                 sockaddr_storage client_addr;
                 socklen_t client_addr_len = sizeof(client_addr);
 
+#if defined(__linux__) || defined(__linux)
                 // Use accept4 for efficiency (sets NONBLOCK + CLOEXEC atomically)
                 auto cfd = ::accept4(listener_socket->get_fd(),
                                      reinterpret_cast<sockaddr *>(&client_addr),
@@ -68,6 +77,26 @@ namespace hh_socket
                         break; // No more connections to accept
                     break;     // Max File Descriptors reached, no need to raise exception
                 }
+#else
+				// Fallback windows implementation
+
+				// Fallback Unix implementation
+				int cfd = ::accept(listener_socket->get_fd(),
+					reinterpret_cast<sockaddr*>(&client_addr),
+					&client_addr_len);
+				if (cfd < 0)
+				{
+					if (errno == EAGAIN || errno == EWOULDBLOCK)
+						break; // No more connections to accept
+					break;     // Max File Descriptors reached, no need to raise exception
+				}
+				// Set non-blocking and close-on-exec flags
+                u_long mode = 1;
+                if (ioctlsocket(cfd, FIONBIO, &mode) != 0)
+                {
+                    throw socket_exception("Failed to set socket non-blocking mode: " + std::string(get_error_message()), "SocketOption", __func__);
+                }
+#endif
 
                 // Optional: disable Nagle for latency-sensitive workloads.
                 // int one = 1; setsockopt(cfd, IPPROTO_TCP, TCP_NODELAY, &one, sizeof(one));
@@ -101,12 +130,14 @@ namespace hh_socket
     {
         try
         {
-            char buf[64 * 1024]; // 64KB buffer for high throughput
+            //char buf[64 * 1024]; // 64KB buffer for high throughput
+			char* buf = new char[64 * 1024];
+			std::size_t sz = 64 * 1024;
             int fd = c.conn->get_fd();
             // Read as much data as possible (edge-triggered)
             while (!c.want_close)
             {
-                ssize_t m = ::recv(fd, buf, sizeof(buf), 0);
+                std::size_t m = ::recv(fd, buf,sz, 0);
                 if (m > 0)
                 {
                     on_message_received(c.conn, data_buffer(buf, m));
@@ -133,6 +164,8 @@ namespace hh_socket
             on_exception_occurred(e);
         }
     }
+#if defined(__linux__) || defined(__linux)
+
     /**
      * Implementation Details:
      * - Uses setrlimit() system call with RLIMIT_NOFILE
@@ -144,7 +177,7 @@ namespace hh_socket
         struct rlimit rl{soft, hard};
         return setrlimit(RLIMIT_NOFILE, &rl);
     }
-
+#endif
     /**
      * Implementation Notes:
      * - Uses EPOLL_CTL_ADD operation
@@ -156,7 +189,8 @@ namespace hh_socket
         epoll_event e{};
         e.events = ev;
         e.data.fd = fd;
-        return epoll_ctl(epoll_fd, EPOLL_CTL_ADD, fd, &e);
+
+        return ::epoll_ctl(epoll_fd, EPOLL_CTL_ADD, fd, &e);
     }
 
     /**
@@ -197,7 +231,7 @@ namespace hh_socket
         current_open_connections--;
         del_epoll(fd);
         on_connection_closed(conns[fd].conn);
-        close(fd);
+		close_socket(fd);
         conns.erase(fd);
     }
 
@@ -228,7 +262,7 @@ namespace hh_socket
                     c.outq.pop_front();
                     continue;
                 }
-                ssize_t n = ::send(c.conn->get_fd(), front.data(), front.size(), 0);
+                std::size_t n = ::send(c.conn->get_fd(), front.data(), front.size(), 0);
                 if (n > 0)
                 {
                     front.erase(0, (size_t)n);
@@ -556,11 +590,13 @@ namespace hh_socket
      */
     epoll_server::epoll_server(int max_fds)
     {
+#if defined(__linux__) || defined(__linux)
         if (set_rlimit_nofile(max_fds, max_fds) != 0)
         {
             std::cerr << "Failed to set file descriptor limits: " << strerror(errno) << std::endl;
         }
         else
+
             this->max_fds = max_fds;
         events = std::vector<epoll_event>(4096);
         epoll_fd = epoll_create1(EPOLL_CLOEXEC);
@@ -569,6 +605,15 @@ namespace hh_socket
             std::cerr << "Failed to create epoll instance: " << strerror(errno) << std::endl;
             throw std::runtime_error("Failed to create epoll instance");
         }
+#else 
+		events = std::vector<epoll_event>(4096);
+		epoll_fd = epoll_create1(0);
+		if (epoll_fd == INVALID_HANDLE_VALUE)
+		{
+			std::cerr << "Failed to create epoll instance: " << strerror(errno) << std::endl;
+			throw std::runtime_error("Failed to create epoll instance");
+		}
+#endif
     }
 
     void epoll_server::listen(int timeout)
@@ -627,9 +672,13 @@ namespace hh_socket
             close_socket(fd);
         if (listener_socket)
             close_socket(listener_socket->get_fd());
+#if defined(_WIN32) || defined(_WIN64) || defined(__CYGWIN__)
+		// hell nothing;
+#else
         if (epoll_fd != -1)
             close_socket(epoll_fd);
+#endif
     }
 }
 
-#endif
+//#endif
