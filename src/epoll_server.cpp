@@ -128,8 +128,7 @@ namespace hh_socket
     {
         try
         {
-            // char buf[64 * 1024]; // 64KB buffer for high throughput
-            char *buf = new char[64 * 1024];
+            char buf[64 * 1024]; // 64KB buffer for high throughput
             std::size_t sz = 64 * 1024;
             int fd = c.conn->get_fd();
             // Read as much data as possible (edge-triggered)
@@ -139,13 +138,11 @@ namespace hh_socket
                 if (m > 0)
                 {
                     on_message_received(c.conn, data_buffer(buf, m));
-                    delete[] buf;
                 }
                 else if (m == 0)
                 {
                     // Peer closed connection gracefully
                     close_conn(fd);
-                    delete[] buf;
                     return;
                 }
                 else
@@ -155,7 +152,6 @@ namespace hh_socket
                         break; // No more data available
                     // Connection error, close it
                     close_conn(fd);
-                    delete[] buf;
                     return;
                 }
             }
