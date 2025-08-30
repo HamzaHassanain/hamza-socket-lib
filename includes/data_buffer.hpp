@@ -129,6 +129,17 @@ namespace hh_socket
         }
 
         /**
+         * @brief Append another data_buffer to this buffer.
+         * @param other Buffer to append
+         *
+         * Adds all bytes from the other buffer to the end of this buffer.
+         */
+        void append(const data_buffer &other)
+        {
+            buffer.insert(buffer.end(), other.buffer.begin(), other.buffer.end());
+        }
+
+        /**
          * @brief Get a pointer to the buffer's data.
          * @return Const pointer to the first byte of the buffer
          *

@@ -20,6 +20,7 @@ Exposes:
 - `explicit data_buffer(const char *data, std::size_t size)` — initialize from raw bytes
 - `void append(const char *data, std::size_t size)` — append raw bytes
 - `void append(const std::string &str)` — append string bytes
+- `void append(const data_buffer &db)` — append another data_buffer
 - `const char *data() const` — pointer to internal storage
 - `std::size_t size() const` — current size in bytes
 - `bool empty() const` — whether buffer is empty
