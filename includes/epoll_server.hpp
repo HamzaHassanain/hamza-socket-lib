@@ -115,9 +115,6 @@ namespace hh_socket
         /// Shared pointer to the listening socket
         std::shared_ptr<socket> listener_socket;
 
-        /// Map of file descriptors to their connection state
-        std::unordered_map<int, epoll_connection> conns;
-
         /// Vector of epoll events for batch event processing
         std::vector<epoll_event> events;
 
@@ -219,6 +216,9 @@ namespace hh_socket
         void epoll_loop(int timeout = 1000);
 
     protected:
+        /// Map of file descriptors to their connection state
+        std::unordered_map<int, epoll_connection> conns;
+
         /**
          * @brief Interface for derived classes to close a connection
          * @param conn Shared pointer to the connection to close
