@@ -167,12 +167,12 @@ namespace hh_socket
         /**
          * @brief Clear all data from the buffer.
          *
-         * Removes all data from the buffer, making it empty. The buffer's capacity
-         * may remain unchanged for efficiency, but size() will return 0 after this call.
+         * Removes all data from the buffer, making it empty. size() will return 0 after this call.
          */
         void clear()
         {
             buffer.clear();
+            buffer.shrink_to_fit();
         }
 
         /**

@@ -11,6 +11,7 @@
  * Platform Support:
  * - Linux only (requires epoll system call)
  * - Automatically disabled on non-Linux platforms
+ * - If on Windows, We use a library I found, called wepoll, it is not that performant, but it does the job
  *
  * Features:
  * - Edge-triggered epoll for high performance
@@ -23,8 +24,6 @@
  * @note This implementation is Linux-specific and will not compile on other platforms
  */
 
-
-
 #include <deque>
 #include <memory>
 #include <string>
@@ -33,14 +32,13 @@
 #include <chrono>
 
 #include <signal.h>
- // check if we are on linux and platform that supports epoll
+// check if we are on linux and platform that supports epoll
 #if (defined(__linux__) || defined(__linux))
 #include <sys/epoll.h>
 #include <sys/resource.h>
 #else
 #include "wepoll.hpp"
 #endif
-
 
 #include "tcp_server.hpp"
 #include "socket.hpp"
@@ -108,7 +106,7 @@ namespace hh_socket
     {
     private:
 #if defined(_WIN32) || defined(_WIN64) || defined(__CYGWIN__)
-		HANDLE epoll_fd = INVALID_HANDLE_VALUE;
+        HANDLE epoll_fd = INVALID_HANDLE_VALUE;
 #else
         /// Epoll file descriptor for event monitoring
         int epoll_fd = -1;
@@ -424,4 +422,3 @@ namespace hh_socket
         virtual void stop_server() override;
     };
 }
-

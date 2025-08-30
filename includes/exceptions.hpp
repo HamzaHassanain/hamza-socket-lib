@@ -68,9 +68,9 @@ namespace hh_socket
          */
         virtual std::string what()
         {
-            // Create formatted message once and cache it
-            this->_formatted_message = "Socket Exception [" + _type + "] in " + _thrower_function + ": " + _formatted_message;
-            return _formatted_message;
+            // Create message
+            std::string msg = "Socket Exception [" + _type + "] in " + _thrower_function + ": " + _formatted_message;
+            return msg;
         }
 
         /// Default virtual destructor

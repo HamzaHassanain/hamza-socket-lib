@@ -441,7 +441,20 @@ target_link_libraries(my_app ${SOCKET_LIB})
 
 Below is a reference of the core public classes and their commonly used methods. Include the corresponding header before use.
 
-For detailed method signatures and advanced usage patterns, consult the comprehensive inline documentation in the header files located in `includes/` directory.
+### For a more comprehensive guide:
+
+- [file_descriptor](docs/file_descriptor.md)
+- [port](docs/port.md)
+- [famaily](docs/famaily.md)
+- [ip_address](docs/ip_address.md)
+- [data_buffer](docs/data_buffer.md)
+- [sokcet_address](docs/sokcet_address.md)
+- [exceptions](docs/exceptions.md)`
+- [socket](docs/socket.md)
+- [connection](docs/connection.md)
+- [tcp_server](docs/tcp_server.md)
+- [epoll_server](docs/epoll_server.md)
+- [utilities](docs/utilities.md)
 
 ### hh_socket::file_descriptor
 
