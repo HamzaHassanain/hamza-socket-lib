@@ -48,9 +48,9 @@ Behavior
 
 - Transfer ownership of the internal `file_descriptor` and address fields. The moved-from object has its `is_open` set to `false` and its descriptor invalidated.
 
-Public API (function-level detail)
+## Public API (function-level detail)
 
-#### int get_fd() const
+### int get_fd() const
 
 - Signature: `int get_fd() const`
 - Description: Return the raw integer socket descriptor owned by the connection.
@@ -62,7 +62,7 @@ int fd = conn.get_fd();
 if (fd >= 0) { /* register fd with epoll/poll/select */ }
 ```
 
-#### std::size_t send(const data_buffer &data)
+### std::size_t send(const data_buffer &data)
 
 - Signature: `std::size_t send(const data_buffer &data)`
 - Description: Transmit bytes on the TCP connection using a single `send` syscall.
@@ -81,7 +81,7 @@ while (total < buf.size()) {
 }
 ```
 
-#### data_buffer receive()
+### data_buffer receive()
 
 - Signature: `data_buffer receive()`
 - Description: Read available bytes from the connection using a single `recv` syscall.
@@ -103,7 +103,7 @@ if (msg.empty()) {
 }
 ```
 
-#### void close()
+### void close()
 
 - Signature: `void close()`
 - Description: Close the underlying socket if open, invalidate the file descriptor, and mark the connection closed. Safe to call multiple times.
@@ -115,14 +115,14 @@ conn.close();
 // after this conn.is_connection_open() == false
 ```
 
-#### bool is_connection_open() const
+### bool is_connection_open() const
 
 - Signature: `bool is_connection_open() const`
 - Description: Return whether the connection is currently open.
 - Returns: `true` if open; `false` after `close()` or a move-from.
 
-#### socket_address get_remote_address() const
-#### socket_address get_local_address() const
+### socket_address get_remote_address() const
+### socket_address get_local_address() const
 
 - Signature: `socket_address get_remote_address() const` / `socket_address get_local_address() const`
 - Description: Return copies of the stored remote and local addresses.
